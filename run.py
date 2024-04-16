@@ -8,6 +8,8 @@ import hashlib
 import hmac
 import uuid
 import rsa 
+import numpy as np
+import random
 
 # 初始化模型和数据
 def initialize_model_and_data():
@@ -28,7 +30,7 @@ def train_model(lstm, train_x, train_y):
     loss_function = nn.MSELoss()
     optimizer = optim.Adam(lstm.parameters(), lr=1e-2)
 
-    max_epochs = 500
+    max_epochs = 100 # 训练轮次
     loss_list = []
     epoch_list = []
 
@@ -81,30 +83,87 @@ def plot_loss_curve(loss_list):
     plt.legend()
     plt.show()
 
-
-
+class DeviceAuthentication:
+    def __init__(self, device_id, manufacturer):
+        self.device_id = device_id
+        self.manufacturer = manufacturer
+        self.identifier = self.device_id+self.manufacturer
+    def authenticate_device(self):
+        # 假设这是一个简单的身份验证逻辑，定义小车的行为模式
+        return True
+    def issue_credentials(self):
+        # 生成随机的凭证和密钥对
+        credential = str(uuid.uuid4())
+        public_key, private_key = self.generate_key_pair()
+        return credential, public_key, private_key
+    def generate_key_pair(self):
+        # 将字符串转换为唯一数字
+        unique_number = self.string_to_unique_number(self.identifier)
+        # 生成RSA公私钥对
+        pubkey, privkey = rsa.newkeys(2048) 
+         # 将公私钥对保存到文件中
+        with open('key_pair/public_key.pem', 'wb') as public_key_file:
+            public_key_file.write(pubkey.save_pkcs1())
+        with open('key_pair/private_key.pem', 'wb') as private_key_file:
+            private_key_file.write(privkey.save_pkcs1())
+        return pubkey.save_pkcs1(), privkey.save_pkcs1()
+    def load_keys(self):
+        # 加载已保存的公私钥对
+        with open('key_pair/public_key.pem', 'rb') as public_key_file:
+            pubkey = rsa.PublicKey.load_pkcs1(public_key_file.read())
+        with open('key_pair/private_key.pem', 'rb') as private_key_file:
+            privkey = rsa.PrivateKey.load_pkcs1(private_key_file.read())
+        return pubkey, privkey
+    def string_to_unique_number(self, s): 
+        # 使用 SHA-256 哈希函数
+        hash_object = hashlib.sha256(s.encode())
+        # 以 16 进制格式返回哈希值
+        hex_dig = hash_object.hexdigest()
+        # 分割十六进制字符串
+        parts = [hex_dig[i:i+8] for i in range(0, len(hex_dig), 8)]
+        # 转换每个子字符串为整数并相加
+        unique_number = sum(int(part, 16) for part in parts)
+        return unique_number
 
 if __name__ == "__main__":
-    start_time = time.time()
+    start_time = time.time() 
 
+    # 训练
     lstm, train_x, train_y = initialize_model_and_data()
     loss_list, epoch_list = train_model(lstm, train_x, train_y)
     save_model(lstm)
-
     print("...Training Finished...")
 
+    # 测试
     test_x = torch.load('Dataset/data2.mat')
     test_y = torch.load('Dataset/label2.mat')
-
     lstm = load_model()
     test_loss, test_acc = test_model(lstm, test_x, test_y)
     end_time = time.time()
 
+    # 输出
     print('Test Loss: {:.5f}'.format(test_loss))
     print('Test Accuracy: {:.2f}%'.format(test_acc))
     print("...Test Finished...")
     execution_time = end_time - start_time
-    print(f"函数运行时间: {execution_time}秒")
+    print(f"模型运行时间: {execution_time}秒")
 
+    # 画图
     plot_loss_curve(loss_list)
 
+    # 模拟一个设备
+    device_id = "device123"
+    manufacturer = "Example Inc."
+
+    # 实例化设备验证类
+    device = DeviceAuthentication(device_id, manufacturer)
+
+    # 进行设备身份验证
+    if device.authenticate_device():
+        # 如果设备验证通过，下发凭证和密钥对
+        credential, public_key, private_key = device.issue_credentials()
+        print("Credential:", credential)
+        print("Public Key:", public_key)
+        print("Private Key:", private_key)
+    else:
+        print("Device authentication failed.")
