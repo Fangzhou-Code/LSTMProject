@@ -14,8 +14,8 @@ import random
 # 初始化模型和数据
 def initialize_model_and_data():
     INPUT_SIZE = 3
-    HIDDEN_SIZE = 10
-    NUM_LAYERS = 1
+    HIDDEN_SIZE = 32
+    NUM_LAYERS = 3
     OUTPUT_SIZE = 1
 
     lstm = LSTM(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, OUTPUT_SIZE)
