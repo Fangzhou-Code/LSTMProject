@@ -33,14 +33,21 @@ def train_model(lstm, train_x, train_y):
     max_epochs = 100 # 训练轮次
     loss_list = []
     epoch_list = []
+    accuracy_list = []
 
     for epoch in range(max_epochs):
         output = lstm(train_x)
         loss = loss_function(output, train_y)
+        acc = 0
 
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
+
+        threshold = 0.5
+        predicted_labels = (output > threshold).int()
+        correct_predictions = (predicted_labels == train_y)
+        acc = correct_predictions.sum().float() / train_y.size(0) * 100
 
         if loss.item() < 1e-5:
             print('Epoch [{}/{}], Loss: {:.5f}'.format(epoch + 1, max_epochs, loss.item()))
@@ -49,8 +56,9 @@ def train_model(lstm, train_x, train_y):
             print('Epoch [{}/{}], Loss: {:.5f}'.format(epoch + 1, max_epochs, loss.item()))
         epoch_list.append(epoch + 1)
         loss_list.append(loss.item())
+        accuracy_list.append(acc)
 
-    return loss_list, epoch_list
+    return  accuracy_list, loss_list, epoch_list
 
 # 保存模型
 def save_model(lstm):
@@ -75,13 +83,28 @@ def test_model(lstm, test_x, test_y):
     return loss.item(), acc
 
 # 画图
-def plot_loss_curve(loss_list):
-    plt.plot(loss_list, label='Training Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
+def plot_curve(accuracy_list, loss_list, epoch_list):
+    plt.figure(figsize=(12, 6))
+    
+    # 绘制损失图
+    plt.subplot(1, 2, 1)
+    plt.plot(epoch_list, loss_list, label='Loss', color='blue')
     plt.title('Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
     plt.legend()
+
+    # 绘制准确率图
+    plt.subplot(1, 2, 2)
+    plt.plot(epoch_list, accuracy_list, label='Accuracy', color='green')
+    plt.title('Training Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.legend()
+
+    plt.tight_layout()
     plt.show()
+
 
 class DeviceAuthentication:
     def __init__(self, device_id, manufacturer):
@@ -130,7 +153,7 @@ if __name__ == "__main__":
 
     # 训练
     lstm, train_x, train_y = initialize_model_and_data()
-    loss_list, epoch_list = train_model(lstm, train_x, train_y)
+    accuracy_list, loss_list, epoch_list = train_model(lstm, train_x, train_y)
     save_model(lstm)
     print("...Training Finished...")
 
@@ -149,7 +172,7 @@ if __name__ == "__main__":
     print(f"模型运行时间: {execution_time}秒")
 
     # 画图
-    plot_loss_curve(loss_list)
+    plot_curve(accuracy_list, loss_list, epoch_list)
 
     # 模拟一个设备
     device_id = "device123"
