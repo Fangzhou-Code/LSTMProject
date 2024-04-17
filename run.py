@@ -1,6 +1,6 @@
 import time
 import torch
-import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 import matplotlib.pyplot as plt
 from Model import LSTM  
@@ -17,9 +17,10 @@ def initialize_model_and_data():
     INPUT_SIZE = 3
     HIDDEN_SIZE = 32
     NUM_LAYERS = 3
-    OUTPUT_SIZE = 1
+    PRED_OUTPUT_SIZE = 3
+    CLAS_OUTPUT_SIZE = 4
 
-    lstm = LSTM(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, OUTPUT_SIZE)
+    lstm = LSTM(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, PRED_OUTPUT_SIZE, CLAS_OUTPUT_SIZE)
 
     train_x = torch.load('Dataset/data1.mat')
     train_y = torch.load('Dataset/label1.mat')
@@ -31,8 +32,8 @@ def initialize_model_and_data():
 def train_model(lstm, train_x, train_y):
     optimizer = optim.Adam(lstm.parameters(), lr=1e-2)
 
-    train_y_pos =
-    train_y_beh =
+    train_y_pred =   # 预测任务标签
+    train_y_clas =   # 分类任务标签
 
     max_epochs = 100 # 训练轮次
     epoch_list = []
@@ -41,14 +42,14 @@ def train_model(lstm, train_x, train_y):
     accuracy_list = []
 
     for epoch in range(max_epochs):
-        pred_y_pos, pred_y_beh = lstm(train_x)
-        loss = lstm.loss_mse(pred_y_pos, train_y_pos) + lstm.loss_ce(pred_y_beh, train_y_beh)
+        pred_y_pred, pred_y_clas = lstm(train_x)
+        loss = lstm.loss_mse(pred_y_pred, train_y_pred) + lstm.loss_ce(pred_y_clas, train_y_clas)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        loss_pos, accuracy = test_model(lstm, train_x, train_y)
+        loss_pred, accuracy = test_model(lstm, train_x, train_y)
 
         if loss.item() < 1e-5:
             print('Epoch [{}/{}], Loss: {:.5f}'.format(epoch + 1, max_epochs, loss.item()))
@@ -58,7 +59,7 @@ def train_model(lstm, train_x, train_y):
 
         epoch_list.append(epoch + 1)
         loss_list.append(loss.item())
-        loss_pred_list.append(loss_pos.item())
+        loss_pred_list.append(loss_pred.item())
         accuracy_list.append(accuracy)
 
     return loss_pred_list, accuracy_list, loss_list, epoch_list
@@ -76,19 +77,17 @@ def load_model():
 
 # 测试模型
 def test_model(lstm, test_x, test_y):
-    train_y_pos =
-    train_y_beh =
+    train_y_pred =  # 预测任务标签
+    train_y_clas =  # 分类任务标签
 
-    pred_y_pos, pred_y_beh = lstm(test_x)
+    pred_y_pred, pred_y_clas = lstm(test_x)
 
     # 预测任务的loss
-    loss_pos = lstm.loss_mse(pred_y_pos, train_y_pos)
+    loss_pos = lstm.loss_mse(pred_y_pred, train_y_pred)
 
     # 分类任务的accuracy
-    threshold = 0.5
-    predicted_labels = (pred_y_beh > threshold).int()
-    correct_predictions = (predicted_labels == train_y_beh)
-    accuracy = correct_predictions.sum().float() / train_y.size(0) * 100
+    pred_labels = F.one_hot(torch.argmax(pred_y_clas), num_classes=lstm.clas_output_size)
+    accuracy = (pred_labels == train_y_clas).sum().float() / train_y.size(0) * 100
 
     return loss_pos.item(), accuracy
 

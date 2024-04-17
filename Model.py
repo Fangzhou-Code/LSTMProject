@@ -3,14 +3,14 @@ import torch.nn as nn
 
 
 class LSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, output_size):
+    def __init__(self, input_size, hidden_size, num_layers, pred_output_size, clas_output_size):
         super(LSTM, self).__init__()
         # Parameters
         self.input_size = input_size  # Feature size
         self.hidden_size = hidden_size  # Number of hidden units
         self.num_layers = num_layers  # Number of LSTM layers to stack
-        self.output_size = output_size  # Number of output
-        self.n_outputs = 1
+        self.pred_output_size = pred_output_size  # Number of output for prediction task
+        self.clas_output_size = clas_output_size  # Number of output for classification task
         self.bias = True
         self.batch_first = True
         self.dropout = 0.2 if self.num_layers > 1 else 0
@@ -18,8 +18,8 @@ class LSTM(nn.Module):
         # LSTM Layers
         self.lstm = nn.LSTM(self.input_size, self.hidden_size, self.num_layers, self.bias, self.batch_first, self.dropout, self.bidirectional)
         # Fully Connected Layers
-        self.fc_pos = nn.Linear(self.hidden_size, self.output_size)  # 预测下一个时间步的行为 position
-        self.fc_beh = nn.Linear(self.hidden_size, self.output_size)  # 对设备行为模式的分类 behavior
+        self.fc_pos = nn.Linear(self.hidden_size, self.pred_output_size)  # 预测下一个时间步的行为 position
+        self.fc_beh = nn.Linear(self.hidden_size, self.clas_output_size)  # 对设备行为模式的分类 behavior
         # Loss Function
         self.loss_mse = nn.MSELoss()  # MSE用于预测下一步
         self.loss_ce = nn.CrossEntropyLoss()  # CE用于分类
