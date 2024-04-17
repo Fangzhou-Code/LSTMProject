@@ -49,7 +49,6 @@ def train_model(lstm, train_x, train_y):
         loss.backward()
         optimizer.step()
 
-<<<<<<< HEAD
         '''
         小车label标签的预测:
         * 运行：1000
@@ -58,14 +57,12 @@ def train_model(lstm, train_x, train_y):
         * 检修：0001
         '''
 
-=======
-        loss_pred, accuracy = test_model(lstm, train_x, train_y)
 
-        if loss.item() < 1e-5:
-            print('Epoch [{}/{}], Loss: {:.5f}'.format(epoch + 1, max_epochs, loss.item()))
-            break
-        elif (epoch + 1) % 100 == 0:
-            print('Epoch [{}/{}], Loss: {:.5f}'.format(epoch + 1, max_epochs, loss.item()))
+        loss_pred, accuracy = test_model(lstm, train_x, train_y)
+        threshold = 0.5
+        predicted_labels = (output > threshold).int()
+        correct_predictions = (predicted_labels == train_y)
+        acc = correct_predictions.sum().float() / train_y.size(0) * 100
 
         epoch_list.append(epoch + 1)
         loss_list.append(loss.item())
@@ -74,7 +71,7 @@ def train_model(lstm, train_x, train_y):
 
     return loss_pred_list, accuracy_list, loss_list, epoch_list
 
->>>>>>> yy
+
 
 # 保存模型
 def save_model(lstm):
