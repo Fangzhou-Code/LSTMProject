@@ -11,6 +11,7 @@ import rsa
 import numpy as np
 import random
 
+
 # 初始化模型和数据
 def initialize_model_and_data():
     INPUT_SIZE = 3
@@ -25,68 +26,78 @@ def initialize_model_and_data():
 
     return lstm, train_x, train_y
 
+
 # 训练模型
 def train_model(lstm, train_x, train_y):
-    loss_function = nn.MSELoss()
     optimizer = optim.Adam(lstm.parameters(), lr=1e-2)
 
+    train_y_pos =
+    train_y_beh =
+
     max_epochs = 100 # 训练轮次
-    loss_list = []
     epoch_list = []
+    loss_list = []
+    loss_pred_list = []
     accuracy_list = []
 
     for epoch in range(max_epochs):
-        output = lstm(train_x)
-        loss = loss_function(output, train_y)
-        acc = 0
+        pred_y_pos, pred_y_beh = lstm(train_x)
+        loss = lstm.loss_mse(pred_y_pos, train_y_pos) + lstm.loss_ce(pred_y_beh, train_y_beh)
 
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        optimizer.zero_grad()
 
-        threshold = 0.5
-        predicted_labels = (output > threshold).int()
-        correct_predictions = (predicted_labels == train_y)
-        acc = correct_predictions.sum().float() / train_y.size(0) * 100
+        loss_pos, accuracy = test_model(lstm, train_x, train_y)
 
         if loss.item() < 1e-5:
             print('Epoch [{}/{}], Loss: {:.5f}'.format(epoch + 1, max_epochs, loss.item()))
             break
         elif (epoch + 1) % 100 == 0:
             print('Epoch [{}/{}], Loss: {:.5f}'.format(epoch + 1, max_epochs, loss.item()))
+
         epoch_list.append(epoch + 1)
         loss_list.append(loss.item())
-        accuracy_list.append(acc)
+        loss_pred_list.append(loss_pos.item())
+        accuracy_list.append(accuracy)
 
-    return  accuracy_list, loss_list, epoch_list
+    return loss_pred_list, accuracy_list, loss_list, epoch_list
+
 
 # 保存模型
 def save_model(lstm):
     torch.save(lstm, 'Model/model1.mat')
 
+
 # 加载模型
 def load_model():
     return torch.load('Model/model1.mat')
 
+
 # 测试模型
 def test_model(lstm, test_x, test_y):
-    predicted_y = lstm(test_x)
+    train_y_pos =
+    train_y_beh =
 
-    loss_function = nn.MSELoss()
-    loss = loss_function(predicted_y, test_y)
+    pred_y_pos, pred_y_beh = lstm(test_x)
 
+    # 预测任务的loss
+    loss_pos = lstm.loss_mse(pred_y_pos, train_y_pos)
+
+    # 分类任务的accuracy
     threshold = 0.5
-    predicted_labels = (predicted_y > threshold).int()
-    correct_predictions = (predicted_labels == test_y)
-    acc = correct_predictions.sum().float() / test_y.size(0) * 100
+    predicted_labels = (pred_y_beh > threshold).int()
+    correct_predictions = (predicted_labels == train_y_beh)
+    accuracy = correct_predictions.sum().float() / train_y.size(0) * 100
 
-    return loss.item(), acc
+    return loss_pos.item(), accuracy
+
 
 # 画图
-def plot_curve(accuracy_list, loss_list, epoch_list):
+def plot_curve(loss_pos_list, accuracy_list, loss_list, epoch_list):
     plt.figure(figsize=(12, 6))
     
-    # 绘制损失图
+    # 绘制总损失图
     plt.subplot(1, 2, 1)
     plt.plot(epoch_list, loss_list, label='Loss', color='blue')
     plt.title('Training Loss')
@@ -94,8 +105,16 @@ def plot_curve(accuracy_list, loss_list, epoch_list):
     plt.ylabel('Loss')
     plt.legend()
 
-    # 绘制准确率图
+    # 绘制预测任务损失图
     plt.subplot(1, 2, 2)
+    plt.plot(epoch_list, loss_pos_list, label='Loss', color='blue')
+    plt.title('Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+
+    # 绘制分类任务准确率图
+    plt.subplot(1, 2, 3)
     plt.plot(epoch_list, accuracy_list, label='Accuracy', color='green')
     plt.title('Training Accuracy')
     plt.xlabel('Epoch')
@@ -153,7 +172,7 @@ if __name__ == "__main__":
 
     # 训练
     lstm, train_x, train_y = initialize_model_and_data()
-    accuracy_list, loss_list, epoch_list = train_model(lstm, train_x, train_y)
+    loss_pos_list, accuracy_list, loss_list, epoch_list = train_model(lstm, train_x, train_y)
     save_model(lstm)
     print("...Training Finished...")
 
@@ -172,7 +191,7 @@ if __name__ == "__main__":
     print(f"模型运行时间: {execution_time}秒")
 
     # 画图
-    plot_curve(accuracy_list, loss_list, epoch_list)
+    plot_curve(loss_pos_list, accuracy_list, loss_list, epoch_list)
 
     # 模拟一个设备
     device_id = "device123"
