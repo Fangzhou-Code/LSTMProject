@@ -15,8 +15,8 @@
 当前是
 
 ```python
-HIDDEN_SIZE = 10 
-NUM_LAYERS = 1
+HIDDEN_SIZE = 32 
+NUM_LAYERS = 3
 ```
 
 * 对比试验

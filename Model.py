@@ -21,8 +21,8 @@ class LSTM(nn.Module):
         # self.fcs = [nn.Linear(self.hidden_size, self.output_size) for i in range(self.n_outputs)]
         self.fc = nn.Linear(self.hidden_size, self.output_size)
         # Initial trainable h0 and c0
-        self.h0 = nn.Parameter(torch.zeros(self.num_layers, 1, self.hidden_size))
-        self.c0 = nn.Parameter(torch.zeros(self.num_layers, 1, self.hidden_size))
+        self.h0 = nn.Parameter(torch.zeros(self.num_layers, 10000, self.hidden_size))
+        self.c0 = nn.Parameter(torch.zeros(self.num_layers, 10000, self.hidden_size))
         # Activation Function
         self.act = nn.Sigmoid()
 
@@ -31,7 +31,13 @@ class LSTM(nn.Module):
         # h0 = torch.randn(self.num_layers * self.num_directions, x.size(0), self.hidden_size).to(device=x.device)
         # Memory units
         # c0 = torch.randn(self.num_layers * self.num_directions, x.size(0), self.hidden_size).to(device=x.device)
-        out, _ = self.lstm(x, (self.h0, self.c0))
+        # out, _ = self.lstm(x, (self.h0, self.c0))
+
+        batch_size = x.size(0)
+        h0 = self.h0.expand(-1, batch_size, -1).contiguous()
+        c0 = self.c0.expand(-1, batch_size, -1).contiguous()
+        out, _ = self.lstm(x, (h0, c0))
+        
         # preds = [self.fcs[i](out[:, -1, :]) for i in range(self.n_outputs)]
         out = self.fc(out[:, -1, :])
         pred = self.act(out)
