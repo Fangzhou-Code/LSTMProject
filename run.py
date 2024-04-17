@@ -49,6 +49,7 @@ def train_model(lstm, train_x, train_y):
         loss.backward()
         optimizer.step()
 
+        # 测试模型在训练集上的预测损失与分类精度用于画图展示
         loss_pred, accuracy = test_model(lstm, train_x, train_y)
 
         if loss.item() < 1e-5:
@@ -75,10 +76,10 @@ def load_model():
     return torch.load('Model/model1.mat')
 
 
-# 测试模型
+# 测试模型的预测损失与分类精度
 def test_model(lstm, test_x, test_y):
-    train_y_pred =  # 预测任务标签
-    train_y_clas =  # 分类任务标签
+    test_y_pred =  # 预测任务标签
+    test_y_clas =  # 分类任务标签
 
     pred_y_pred, pred_y_clas = lstm(test_x)
 

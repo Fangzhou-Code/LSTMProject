@@ -18,8 +18,11 @@ class LSTM(nn.Module):
         # LSTM Layers
         self.lstm = nn.LSTM(self.input_size, self.hidden_size, self.num_layers, self.bias, self.batch_first, self.dropout, self.bidirectional)
         # Fully Connected Layers
-        self.fc_pos = nn.Linear(self.hidden_size, self.pred_output_size)  # 预测下一个时间步的行为 position
-        self.fc_beh = nn.Linear(self.hidden_size, self.clas_output_size)  # 对设备行为模式的分类 behavior
+        self.fc = nn.Linear(self.hidden_size, 128)
+        self.fc1_pred = nn.Linear(128, 64)  # 预测下一个时间步的行为 position
+        self.fc2_pred = nn.Linear(64, self.pred_output_size)  # 预测下一个时间步的行为 position
+        self.fc1_clas = nn.Linear(128, 64)  # 对设备行为模式的分类 behavior
+        self.fc2_clas = nn.Linear(64, self.clas_output_size)  # 对设备行为模式的分类 behavior
         # Loss Function
         self.loss_mse = nn.MSELoss()  # MSE用于预测下一步
         self.loss_ce = nn.CrossEntropyLoss()  # CE用于分类
@@ -38,6 +41,12 @@ class LSTM(nn.Module):
         lstm_out, _ = self.lstm(x, (h0, c0))
         last_time_step = lstm_out[:, -1, :]
 
-        pos = self.fc_pos(last_time_step)
-        beh = nn.Softmax(self.fc_beh(last_time_step))
-        return pos, beh
+        # 预测任务
+        fc_pred_out = self.fc1_pred(last_time_step)
+        pred = self.fc2_pred(fc_pred_out)
+
+        # 分类任务
+        fc_clas_out = self.fc1_clas(last_time_step)
+        clas = nn.Softmax(self.fc2_clas(fc_clas_out))
+
+        return pred, clas
