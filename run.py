@@ -44,21 +44,14 @@ def train_model(lstm, train_x, train_y):
         optimizer.step()
         optimizer.zero_grad()
 
-        threshold = 0.5
-        predicted_labels = (output > threshold).int()
-        correct_predictions = (predicted_labels == train_y)
-        acc = correct_predictions.sum().float() / train_y.size(0) * 100
+        '''
+        小车label标签的预测:
+        * 运行：1000
+        * 封存：0100
+        * 待料：0010
+        * 检修：0001
+        '''
 
-        if loss.item() < 1e-5:
-            print('Epoch [{}/{}], Loss: {:.5f}'.format(epoch + 1, max_epochs, loss.item()))
-            break
-        elif (epoch + 1) % 100 == 0:
-            print('Epoch [{}/{}], Loss: {:.5f}'.format(epoch + 1, max_epochs, loss.item()))
-        epoch_list.append(epoch + 1)
-        loss_list.append(loss.item())
-        accuracy_list.append(acc)
-
-    return  accuracy_list, loss_list, epoch_list
 
 # 保存模型
 def save_model(lstm):
