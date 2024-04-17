@@ -49,27 +49,21 @@ def train_model(lstm, train_x, train_y):
         loss.backward()
         optimizer.step()
 
-        '''
-        小车label标签的预测:
-        * 运行：1000
-        * 封存：0100
-        * 待料：0010
-        * 检修：0001
-        '''
-
-
-        loss_pred, accuracy = test_model(lstm, train_x, train_y)
         threshold = 0.5
         predicted_labels = (output > threshold).int()
         correct_predictions = (predicted_labels == train_y)
         acc = correct_predictions.sum().float() / train_y.size(0) * 100
 
+        if loss.item() < 1e-5:
+            print('Epoch [{}/{}], Loss: {:.5f}'.format(epoch + 1, max_epochs, loss.item()))
+            break
+        elif (epoch + 1) % 100 == 0:
+            print('Epoch [{}/{}], Loss: {:.5f}'.format(epoch + 1, max_epochs, loss.item()))
         epoch_list.append(epoch + 1)
         loss_list.append(loss.item())
-        loss_pred_list.append(loss_pred.item())
-        accuracy_list.append(accuracy)
+        accuracy_list.append(acc)
 
-    return loss_pred_list, accuracy_list, loss_list, epoch_list
+    return  accuracy_list, loss_list, epoch_list
 
 
 
