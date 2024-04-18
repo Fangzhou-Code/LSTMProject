@@ -29,6 +29,8 @@ class LSTM(nn.Module):
         # Initial trainable hidden unit h0 and memory unit c0
         self.h0 = nn.Parameter(torch.zeros(self.num_layers, 10000, self.hidden_size))
         self.c0 = nn.Parameter(torch.zeros(self.num_layers, 10000, self.hidden_size))
+        # Activation Function
+        self.softmax = nn.Softmax()
 
     def forward(self, x):
         # h0 = torch.zeros(self.num_layers * self.num_directions, x.size(0), self.hidden_size).to(device=x.device)
@@ -41,12 +43,15 @@ class LSTM(nn.Module):
         lstm_out, _ = self.lstm(x, (h0, c0))
         last_time_step = lstm_out[:, -1, :]
 
+        # 全连接层
+        fc_out = self.fc(last_time_step)
+
         # 预测任务
-        fc_pred_out = self.fc1_pred(last_time_step)
+        fc_pred_out = self.fc1_pred(fc_out)
         pred = self.fc2_pred(fc_pred_out)
 
         # 分类任务
-        fc_clas_out = self.fc1_clas(last_time_step)
-        clas = nn.Softmax(self.fc2_clas(fc_clas_out))
+        fc_clas_out = self.fc1_clas(fc_out)
+        clas = self.softmax(self.fc2_clas(fc_clas_out))
 
         return pred, clas

@@ -7,7 +7,7 @@ from Model import LSTM
 import hashlib
 import hmac
 import uuid
-import rsa 
+import rsa
 import numpy as np
 import random
 
@@ -22,8 +22,8 @@ def initialize_model_and_data():
 
     lstm = LSTM(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, PRED_OUTPUT_SIZE, CLAS_OUTPUT_SIZE)
 
-    train_x = torch.load('Dataset/data1.mat')
-    train_y = torch.load('Dataset/label1.mat')
+    train_x = torch.load('Dataset/traindataset.pt')
+    train_y = torch.load('Dataset/trainlabels.pt')
 
     return lstm, train_x, train_y
 
@@ -32,10 +32,12 @@ def initialize_model_and_data():
 def train_model(lstm, train_x, train_y):
     optimizer = optim.Adam(lstm.parameters(), lr=1e-2)
 
-    train_y_pred =   # 预测任务标签
-    train_y_clas =   # 分类任务标签
+    train_y_pred = train_x[:, -1, :]  # 预测任务标签
+    train_y_clas = train_y  # 分类任务标签
 
-    max_epochs = 100 # 训练轮次
+    train_x = train_x[:, :-1, :]
+
+    max_epochs = 1000  # 训练轮次
     epoch_list = []
     loss_list = []
     loss_pred_list = []
@@ -43,79 +45,81 @@ def train_model(lstm, train_x, train_y):
 
     for epoch in range(max_epochs):
         pred_y_pred, pred_y_clas = lstm(train_x)
-        loss = lstm.loss_mse(pred_y_pred, train_y_pred) + lstm.loss_ce(pred_y_clas, train_y_clas)
+        loss_pred = lstm.loss_mse(pred_y_pred, train_y_pred)
+        loss_ce = lstm.loss_ce(pred_y_clas, train_y_clas)
+        loss = loss_pred / 1000 + loss_ce
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        # 测试模型在训练集上的预测损失与分类精度用于画图展示
-        loss_pred, accuracy = test_model(lstm, train_x, train_y)
-
         if loss.item() < 1e-5:
             print('Epoch [{}/{}], Loss: {:.5f}'.format(epoch + 1, max_epochs, loss.item()))
             break
         elif (epoch + 1) % 100 == 0:
+            # 测试模型在训练集上的预测损失与分类精度用于画图展示
+            loss_pred, accuracy = test_model(lstm, train_x, train_y)
+            epoch_list.append(epoch + 1)
+            loss_list.append(loss.item())
+            loss_pred_list.append(loss_pred.detach().numpy())
+            accuracy_list.append(accuracy.detach().numpy())
             print('Epoch [{}/{}], Loss: {:.5f}'.format(epoch + 1, max_epochs, loss.item()))
-
-        epoch_list.append(epoch + 1)
-        loss_list.append(loss.item())
-        loss_pred_list.append(loss_pred.item())
-        accuracy_list.append(accuracy)
 
     return loss_pred_list, accuracy_list, loss_list, epoch_list
 
 
 # 保存模型
 def save_model(lstm):
-    torch.save(lstm, 'Model/model1.mat')
+    torch.save(lstm, 'Model/lstmmodel.pt')
 
 
 # 加载模型
 def load_model():
-    return torch.load('Model/model1.mat')
+    return torch.load('Model/lstmmodel.pt')
 
 
 # 测试模型的预测损失与分类精度
 def test_model(lstm, test_x, test_y):
-    test_y_pred =  # 预测任务标签
-    test_y_clas =  # 分类任务标签
+    test_y_pred = test_x[:, -1, :]  # 预测任务标签
+    test_y_clas = test_y  # 分类任务标签
+
+    test_x = test_x[:, :-1, :]
 
     pred_y_pred, pred_y_clas = lstm(test_x)
 
     # 预测任务的loss
-    loss_pos = lstm.loss_mse(pred_y_pred, train_y_pred)
+    loss_pos = lstm.loss_mse(pred_y_pred, test_y_pred)
 
     # 分类任务的accuracy
-    pred_labels = F.one_hot(torch.argmax(pred_y_clas), num_classes=lstm.clas_output_size)
-    accuracy = (pred_labels == train_y_clas).sum().float() / train_y.size(0) * 100
+    pred_labels = F.one_hot(torch.argmax(pred_y_clas, dim=1), num_classes=lstm.clas_output_size)
+    accuracy = torch.mean(torch.eq(pred_labels, test_y_clas).all(dim=1).float()) * 100
 
-    return loss_pos.item(), accuracy
+    return loss_pos, accuracy
 
 
 # 画图
-def plot_curve(loss_pos_list, accuracy_list, loss_list, epoch_list):
+def plot_curve(loss_pred_list, accuracy_list, loss_list, epoch_list):
     plt.figure(figsize=(12, 6))
     
     # 绘制总损失图
-    plt.subplot(1, 2, 1)
-    plt.plot(epoch_list, loss_list, label='Loss', color='blue')
+    plt.subplot(1, 3, 1)
+    plt.plot(epoch_list, loss_list, label='Training Loss', color='red')
     plt.title('Training Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
 
     # 绘制预测任务损失图
-    plt.subplot(1, 2, 2)
-    plt.plot(epoch_list, loss_pos_list, label='Loss', color='blue')
+    plt.subplot(1, 3, 2)
+    plt.plot(epoch_list, loss_pred_list, label='Prediction Loss', color='blue')
     plt.title('Training Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
 
     # 绘制分类任务准确率图
-    plt.subplot(1, 2, 3)
-    plt.plot(epoch_list, accuracy_list, label='Accuracy', color='green')
+    plt.subplot(1, 3, 3)
+    plt.plot(epoch_list, accuracy_list, label='Classification Accuracy', color='green')
     plt.title('Training Accuracy')
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
@@ -177,8 +181,8 @@ if __name__ == "__main__":
     print("...Training Finished...")
 
     # 测试
-    test_x = torch.load('Dataset/data2.mat')
-    test_y = torch.load('Dataset/label2.mat')
+    test_x = torch.load('Dataset/traindataset.pt')
+    test_y = torch.load('Dataset/testlabels.pt')
     lstm = load_model()
     test_loss, test_acc = test_model(lstm, test_x, test_y)
     end_time = time.time()
