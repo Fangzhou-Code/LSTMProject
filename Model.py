@@ -30,7 +30,7 @@ class LSTM(nn.Module):
         self.h0 = nn.Parameter(torch.zeros(self.num_layers, 10000, self.hidden_size))
         self.c0 = nn.Parameter(torch.zeros(self.num_layers, 10000, self.hidden_size))
         # Activation Function
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         # h0 = torch.zeros(self.num_layers * self.num_directions, x.size(0), self.hidden_size).to(device=x.device)
