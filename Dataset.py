@@ -2,8 +2,8 @@ import numpy as np
 import random
 import torch
 
-def generate_car_data(per_positive):
-    num_samples = 10000
+
+def generate_car_data(num_samples, per_positive):
     input_dim = 20
     dataset = np.zeros((num_samples, input_dim, 3))
     labels = np.zeros((num_samples,4),dtype=int)
@@ -113,13 +113,13 @@ def generate_car_data(per_positive):
 
 if __name__=="__main__":
     # 生成训练集
-    traindataset,trainlabels = generate_car_data(per_positive=0.7)
+    traindataset,trainlabels = generate_car_data(num_samples=10000, per_positive=0.7)
     torch.save(traindataset, 'Dataset/traindataset.pt')
     torch.save(trainlabels, 'Dataset/trainlabels.pt') 
     print("...train Create Finished...")
 
     # 生成测试集
-    testdataset,testlabels = generate_car_data(per_positive=0.8)
+    testdataset,testlabels = generate_car_data(num_samples=1000, per_positive=0.7)
     torch.save(testdataset, 'Dataset/testdataset.pt')
     torch.save(testlabels, 'Dataset/testlabels.pt')
     print("...test Create Finished...")

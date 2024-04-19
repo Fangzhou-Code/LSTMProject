@@ -18,11 +18,13 @@ class LSTM(nn.Module):
         # LSTM Layers
         self.lstm = nn.LSTM(self.input_size, self.hidden_size, self.num_layers, self.bias, self.batch_first, self.dropout, self.bidirectional)
         # Fully Connected Layers
-        self.fc = nn.Linear(self.hidden_size, 128)
-        self.fc1_pred = nn.Linear(128, 64)  # 预测下一个时间步的行为 position
-        self.fc2_pred = nn.Linear(64, self.pred_output_size)  # 预测下一个时间步的行为 position
-        self.fc1_clas = nn.Linear(128, 64)  # 对设备行为模式的分类 behavior
-        self.fc2_clas = nn.Linear(64, self.clas_output_size)  # 对设备行为模式的分类 behavior
+        self.fc = nn.Linear(self.hidden_size, 32)
+        # self.fc1_pred = nn.Linear(128, 64)  # 预测下一个时间步的行为 position
+        self.fc2_pred = nn.Linear(32, self.pred_output_size)  # 预测下一个时间步的行为 position
+        # self.fc1_clas = nn.Linear(128, 64)  # 对设备行为模式的分类 behavior
+        self.fc2_clas = nn.Linear(32, self.clas_output_size)  # 对设备行为模式的分类 behavior
+        # Dropout layer
+        self.do = nn.Dropout(p=0.2)
         # Loss Function
         self.loss_mse = nn.MSELoss()  # MSE用于预测下一步
         self.loss_ce = nn.CrossEntropyLoss()  # CE用于分类
@@ -33,9 +35,11 @@ class LSTM(nn.Module):
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
-        # h0 = torch.zeros(self.num_layers * self.num_directions, x.size(0), self.hidden_size).to(device=x.device)
-        # c0 = torch.zeros(self.num_layers * self.num_directions, x.size(0), self.hidden_size).to(device=x.device)
-        # out, _ = self.lstm(x, (self.h0, self.c0))
+        # h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device=x.device)
+        # c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device=x.device)
+
+        # h0 = torch.randn(self.num_layers, x.size(0), self.hidden_size).to(device=x.device)
+        # c0 = torch.randn(self.num_layers, x.size(0), self.hidden_size).to(device=x.device)
 
         batch_size = x.size(0)
         h0 = self.h0.expand(-1, batch_size, -1).contiguous()
@@ -47,11 +51,11 @@ class LSTM(nn.Module):
         fc_out = self.fc(last_time_step)
 
         # 预测任务
-        fc_pred_out = self.fc1_pred(fc_out)
-        pred = self.fc2_pred(fc_pred_out)
+        # fc_pred_out = self.fc1_pred(fc_out)
+        pred = self.fc2_pred(self.do(fc_out))
 
         # 分类任务
-        fc_clas_out = self.fc1_clas(fc_out)
-        clas = self.softmax(self.fc2_clas(fc_clas_out))
+        # fc_clas_out = self.fc1_clas(fc_out)
+        clas = self.softmax(self.fc2_clas(self.do(fc_out)))
 
         return pred, clas
