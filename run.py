@@ -15,7 +15,7 @@ import random
 # 初始化模型和数据
 def initialize_model_and_data():
     INPUT_SIZE = 3
-    HIDDEN_SIZE = 32
+    HIDDEN_SIZE = 64
     NUM_LAYERS = 3
     PRED_OUTPUT_SIZE = 3
     CLAS_OUTPUT_SIZE = 4
@@ -29,13 +29,22 @@ def initialize_model_and_data():
 
 # 训练模型
 def train_model(lstm, train_x, train_y):
+<<<<<<< HEAD
     optimizer = optim.Adam(lstm.parameters(), lr=1e-2)
+=======
+    optimizer = optim.Adam(lstm.parameters(), lr=1e-2, weight_decay=1e-5)
+
+>>>>>>> 4e49f699e9d660a24baaa1462f853935bc63a068
     train_y_pred = train_x[:, -1, :]  # 预测任务标签
     train_y_clas = train_y  # 分类任务标签
 
     train_x = train_x[:, :-1, :]
 
+<<<<<<< HEAD
     max_epochs = 100  # 训练轮次
+=======
+    max_epochs = 500  # 训练轮次
+>>>>>>> 4e49f699e9d660a24baaa1462f853935bc63a068
     epoch_list = []
     loss_list = []
     loss_pred_list = []
@@ -43,8 +52,10 @@ def train_model(lstm, train_x, train_y):
 
     for epoch in range(max_epochs):
         pred_y_pred, pred_y_clas = lstm(train_x)
+
         loss_pred = lstm.loss_mse(pred_y_pred, train_y_pred)
         loss_ce = lstm.loss_ce(pred_y_clas, train_y_clas)
+
         loss = loss_pred / 1000 + loss_ce
 
         optimizer.zero_grad()
@@ -173,6 +184,7 @@ if __name__ == "__main__":
     start_time = time.time() 
 
     # 训练
+<<<<<<< HEAD
     lstm, train_x, train_y = initialize_model_and_data()
     # 加速
     lstm = lstm.cuda()
@@ -180,6 +192,11 @@ if __name__ == "__main__":
 
     loss_pos_list, accuracy_list, loss_list, epoch_list = train_model(lstm, train_x, train_y)
     save_model(lstm)
+=======
+    # lstm, train_x, train_y = initialize_model_and_data()
+    # loss_pos_list, accuracy_list, loss_list, epoch_list = train_model(lstm, train_x, train_y)
+    # save_model(lstm)
+>>>>>>> 4e49f699e9d660a24baaa1462f853935bc63a068
     print("...Training Finished...")
 
     # 测试
