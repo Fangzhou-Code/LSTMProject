@@ -37,7 +37,11 @@ def train_model(lstm, train_x, train_y):
 
     train_x = train_x[:, :-1, :]
 
-    max_epochs = 500  # 训练轮次
+    max_epochs = 100
+    
+    
+    
+    # 训练轮次
     epoch_list = []
     loss_list = []
     loss_pred_list = []
@@ -63,8 +67,8 @@ def train_model(lstm, train_x, train_y):
             loss_pred, accuracy = test_model(lstm, train_x, train_y)
             epoch_list.append(epoch + 1)
             loss_list.append(loss.item())
-            loss_pred_list.append(loss_pred.detach().numpy())
-            accuracy_list.append(accuracy.detach().numpy())
+            loss_pred_list.append(loss_pred.detach().cpu().numpy())
+            accuracy_list.append(accuracy.detach().cpu().numpy())
             print('Epoch [{}/{}], Loss: {:.5f}'.format(epoch + 1, max_epochs, loss.item()))
 
     return loss_pred_list, accuracy_list, loss_list, epoch_list
@@ -148,7 +152,7 @@ class DeviceAuthentication:
         # 将字符串转换为唯一数字
         unique_number = self.string_to_unique_number(self.identifier)
         # 生成RSA公私钥对
-        pubkey, privkey = rsa.newkeys(2048) 
+        pubkey, privkey = rsa.newkeys(2048)  #2048
          # 将公私钥对保存到文件中
         with open('key_pair/public_key.pem', 'wb') as public_key_file:
             public_key_file.write(pubkey.save_pkcs1())
@@ -176,10 +180,16 @@ class DeviceAuthentication:
 if __name__ == "__main__":
     start_time = time.time() 
 
+    # 初始化
+    lstm, train_x, train_y = initialize_model_and_data()
+    # 加速
+    lstm = lstm.cuda()
+    train_x = train_x.cuda()
+    train_y = train_y.cuda()
+
     # 训练
-    # lstm, train_x, train_y = initialize_model_and_data()
-    # loss_pos_list, accuracy_list, loss_list, epoch_list = train_model(lstm, train_x, train_y)
-    # save_model(lstm)
+    loss_pos_list, accuracy_list, loss_list, epoch_list = train_model(lstm, train_x, train_y)
+    save_model(lstm)
     print("...Training Finished...")
 
     # 测试

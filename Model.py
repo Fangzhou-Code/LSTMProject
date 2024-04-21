@@ -29,8 +29,8 @@ class LSTM(nn.Module):
         self.loss_mse = nn.MSELoss()  # MSE用于预测下一步
         self.loss_ce = nn.CrossEntropyLoss()  # CE用于分类
         # Initial trainable hidden unit h0 and memory unit c0
-        self.h0 = nn.Parameter(torch.zeros(self.num_layers, 10000, self.hidden_size))
-        self.c0 = nn.Parameter(torch.zeros(self.num_layers, 10000, self.hidden_size))
+        # self.h0 = nn.Parameter(torch.zeros(self.num_layers, , self.hidden_size))
+        # self.c0 = nn.Parameter(torch.zeros(self.num_layers, -1, self.hidden_size))
         # Activation Function
         self.softmax = nn.Softmax(dim=1)
 
@@ -41,9 +41,10 @@ class LSTM(nn.Module):
         # h0 = torch.randn(self.num_layers, x.size(0), self.hidden_size).to(device=x.device)
         # c0 = torch.randn(self.num_layers, x.size(0), self.hidden_size).to(device=x.device)
 
-        batch_size = x.size(0)
-        h0 = self.h0.expand(-1, batch_size, -1).contiguous()
-        c0 = self.c0.expand(-1, batch_size, -1).contiguous()
+        
+        h0 = self.h0.expand(-1, x.size(0), -1).contiguous()
+        c0 = self.c0.expand(-1, x.size(0), -1).contiguous()
+        
         lstm_out, _ = self.lstm(x, (h0, c0))
         last_time_step = lstm_out[:, -1, :]
 
