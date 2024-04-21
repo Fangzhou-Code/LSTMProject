@@ -37,7 +37,7 @@ def train_model(lstm, train_x, train_y):
 
     train_x = train_x[:, :-1, :]
 
-    max_epochs = 100
+    max_epochs = 10000 # 训练轮次
     
     
     
@@ -182,19 +182,21 @@ if __name__ == "__main__":
 
     # 初始化
     lstm, train_x, train_y = initialize_model_and_data()
-    # 加速
+    test_x = torch.load('Dataset/testdataset.pt')
+    test_y = torch.load('Dataset/testlabels.pt')
+
+    # 加速（CPU记得注释掉）
     lstm = lstm.cuda()
     train_x = train_x.cuda()
     train_y = train_y.cuda()
+    test_x = test_x.cuda()
+    test_y = test_y.cuda()
 
     # 训练
     loss_pos_list, accuracy_list, loss_list, epoch_list = train_model(lstm, train_x, train_y)
     save_model(lstm)
-    print("...Training Finished...")
-
-    # 测试
-    test_x = torch.load('Dataset/testdataset.pt')
-    test_y = torch.load('Dataset/testlabels.pt')
+    print("...Training Finished...")    
+    
     lstm = load_model()
     test_loss, test_acc = test_model(lstm, test_x, test_y)
     end_time = time.time()
