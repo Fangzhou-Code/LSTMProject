@@ -249,6 +249,7 @@ if __name__ == "__main__":
 
     # 画图
     plot_curve(loss_pos_list, accuracy_list, loss_list, epoch_list) # 训练集acc, loss
+    plt.savefig('./results/training_curve.pdf')
     error_rate = 1- per_positive # 错误率和测试准确率
     # 计算错误率和错误率与测试准确率的乘积
     error_rate_times_test_acc = error_rate * (test_acc_sum / 100)
@@ -260,3 +261,4 @@ if __name__ == "__main__":
     plt.ylabel('Value')
     plt.title('Error sample detection rate')
     plt.show()
+    plt.savefig('./results/error_detection_plot.pdf')
