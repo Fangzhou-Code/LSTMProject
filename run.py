@@ -21,12 +21,11 @@ def initialize_model_data():
     PRED_OUTPUT_SIZE = 3
     CLAS_OUTPUT_SIZE = 4
     train_x, train_y = Dataset.generate_car_data(num_samples=10000, input_dim=20, per_positive=0.7)
-    test_x, test_y = Dataset.generate_car_data(num_samples=1000, input_dim=20, per_positive=0.7)
     lstm = LSTM(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, PRED_OUTPUT_SIZE, CLAS_OUTPUT_SIZE)
-    return lstm, train_x, train_y, test_x, test_y
-def initialize_valid_data(input_dim, per_positive):
-    valid_x, valid_y = Dataset.generate_car_data(num_samples=1, input_dim=input_dim, per_positive=per_positive)
-    return valid_x, valid_y
+    return lstm, train_x, train_y
+def initialize_test_data(input_dim, per_positive):
+    test_x, test_y = Dataset.generate_car_data(num_samples=1, input_dim=50, per_positive=0.7)
+    return test_x, test_y
 
 # 训练模型
 def train_model(lstm, train_x, train_y):
@@ -37,7 +36,7 @@ def train_model(lstm, train_x, train_y):
 
     train_x = train_x[:, :-1, :]
 
-    max_epochs = 100 # 训练轮次
+    max_epochs = 10000 # 训练轮次
     
     # 训练轮次
     epoch_list = []
@@ -96,7 +95,7 @@ def test_model(lstm, test_x, test_y):
 
     # 分类任务的accuracy
     pred_labels = F.one_hot(torch.argmax(pred_y_clas, dim=1), num_classes=lstm.clas_output_size)
-    accuracy = torch.mean(torch.eq(pred_labels, test_y_clas).all(dim=1).float()) * 100
+    accuracy = torch.mean(torch.eq(pred_labels, test_y_clas).all(dim=1).float()) 
 
     return loss_pos, accuracy, pred_labels
 
@@ -177,72 +176,82 @@ class DeviceAuthentication:
         unique_number = sum(int(part, 16) for part in parts)
         return unique_number
 
+# 生成小车的最后使用上次身份凭证的时间
+def generate_final_time(num, low, high):
+    sum = 0
+    for _ in range(num):
+        random_num = random.randint(low, high)
+        sum += random_num
+    return sum
+
 if __name__ == "__main__":
     start_time = time.time() 
 
     # 初始化
-    lstm, train_x, train_y, test_x, test_y = initialize_model_data()
+    lstm, train_x, train_y = initialize_model_data()
 
     # 加速（CPU记得注释掉）
     lstm = lstm.cuda()
     train_x = train_x.cuda()
     train_y = train_y.cuda()
-    test_x = test_x.cuda()
-    test_y = test_y.cuda()
+    
 
     # 训练
     loss_pos_list, accuracy_list, loss_list, epoch_list = train_model(lstm, train_x, train_y)
     save_model(lstm)
     print("...Training Finished...")    
+    end_time = time.time()
     
     # 测试
     lstm = load_model()
-    test_loss, test_acc, pred_labels = test_model(lstm, test_x, test_y)
-    end_time = time.time()
-
-    # 输出
-    print('Test Loss: {:.5f}'.format(test_loss))
-    print('Test Accuracy: {:.2f}%'.format(test_acc))
-    print("...Test Finished...")
-    execution_time = end_time - start_time
-    print(f"模型运行时间: {execution_time}秒")
-
     per_positive = 0.7 # 初始化小车的正样本概率
     max_num = 10 # 身份凭证最大使用次数
     use_num = 0 # 初始化使用次数
-    car_num = test_x.size(0)-1 # 验证小车数量
-
+    car_num = 100 # 验证小车数量
+    test_loss_sum = 0 # 小车损失值总和
+    test_acc_sum = 0 # 小车acc总和
     # 进行设备身份验证，发送身份凭证
     for i in range(car_num): # 每一辆小车进行验证
         # 模拟一个小车 （后续可以随机或者导入数据集）
         device_id = "device123"
         manufacturer = "Example Inc."
         device = DeviceAuthentication(device_id, manufacturer)# 实例化设备验证类
-
-        while use_num <= 10:
-            use_num += 1
-            use_time = random.randint(0, 10) # 假设每次申请时间不超过10秒
-
-            # 新的测试集
-            valid_x, valid_y = initialize_valid_data(use_time+1, per_positive)
-            valid_x = valid_x.cuda() # 加速
-            valid_y = valid_y.cuda() # 加速
-
-            _, _, pred_labels = test_model(lstm, valid_x, valid_y) 
+        final_time = generate_final_time(10, 0, 3) +20 # 时间必须大于20
+        test_x, test_y = initialize_test_data(final_time, per_positive)
+        test_x = test_x.cuda()
+        test_y = test_y.cuda()
+        test_loss_list = []
+        test_acc_list = []
+        for i in range(20, final_time):
+            test_loss, test_acc, pred_labels = test_model(lstm, test_x[:, i-20:i, :], test_y)
+            test_loss_list.append(test_loss.detach().cpu())
+            test_acc_list.append(test_acc.detach().cpu())
             if device.authenticate_device(pred_labels):
                 # 如果设备验证通过，下发凭证和密钥对
-                credential, public_key, private_key = device.issue_credentials()
-                print("Credential:", credential)
+                print("Credential")
+                # credential, public_key, private_key = device.issue_credentials()
+                # print("Credential:", credential)
                 # print("Public Key:", public_key)
                 # print("Private Key:", private_key)
             else:
                 print("Device authentication failed.")
+                break
+        print("Maximum usage reached, destroy authentication.")
+        print("test_loss_list",type(test_loss_list))
+        test_loss_sum += np.mean(test_loss_list)
+        test_acc_sum += np.mean(test_acc_list)
+    # 输出
+    print('Test Loss: {:.5f}'.format(test_loss_sum))
+    print('Test Accuracy: {:.2f}%'.format(test_acc_sum)) 
+    print("...Test Finished...")
+    execution_time = end_time - start_time
+    print(f"模型运行时间: {execution_time}秒")
 
     # 画图
     plot_curve(loss_pos_list, accuracy_list, loss_list, epoch_list) # 训练集acc, loss
     error_rate = 1- per_positive # 错误率和测试准确率
     # 计算错误率和错误率与测试准确率的乘积
-    error_rate_times_test_acc = error_rate * (test_acc.cpu() / 100)
+    error_rate_times_test_acc = error_rate * (test_acc_sum / 100)
     # 柱状图数据
     categories = ['Original', 'LSTM']
     values = [0.3, error_rate_times_test_acc]
