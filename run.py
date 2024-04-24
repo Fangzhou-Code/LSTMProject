@@ -11,6 +11,7 @@ import rsa
 import numpy as np
 import random
 import Dataset
+from matplotlib.ticker import PercentFormatter
 
 
 # 初始化模型和数据
@@ -36,7 +37,7 @@ def train_model(lstm, train_x, train_y):
 
     train_x = train_x[:, :-1, :]
 
-    max_epochs = 10000 # 训练轮次
+    max_epochs = 5000 # 训练轮次
     
     # 训练轮次
     epoch_list = []
@@ -204,7 +205,7 @@ if __name__ == "__main__":
     
     # 测试
     lstm = load_model()
-    per_positive = 0.7 # 初始化小车的正样本概率
+    per_positive = 0.6 # 初始化小车的正样本概率
     max_num = 10 # 身份凭证最大使用次数
     use_num = 0 # 初始化使用次数
     car_num = 100 # 验证小车数量
@@ -251,14 +252,19 @@ if __name__ == "__main__":
     plot_curve(loss_pos_list, accuracy_list, loss_list, epoch_list) # 训练集acc, loss
     plt.savefig('./results/training_curve.pdf')
     error_rate = 1- per_positive # 错误率和测试准确率
-    # 计算错误率和错误率与测试准确率的乘积
-    error_rate_times_test_acc = error_rate * (test_acc_sum / 100)
     # 柱状图数据
     categories = ['Original', 'LSTM']
-    values = [0.3, error_rate_times_test_acc]
+    # 将错误率和错误率与测试准确率的乘积转换为百分比
+    values = [per_positive * 100, (test_acc_sum / 100) * 100]
+
     # 绘制柱状图
-    plt.bar(categories, values, color=['red', 'blue'])
-    plt.ylabel('Value')
-    plt.title('Error sample detection rate')
-    plt.show()
-    plt.savefig('./results/error_detection_plot.pdf')
+    plt.bar(categories, values, color=['#FFA07A', '#87CEEB'])
+    plt.ylabel('Percentage')  # 纵坐标标签改为百分比
+    # 设置中文字体
+    # 解决中文显示问题
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.rcParams['axes.unicode_minus'] = False
+    plt.title(u'设备身份验证的准确率')
+    plt.ylim(0, 100)
+    plt.gca().yaxis.set_major_formatter(PercentFormatter())  # 设置纵坐标格式为百分比
+    plt.savefig('./results/detect_curve.pdf')
