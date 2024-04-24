@@ -34,7 +34,7 @@ class LSTM(nn.Module):
         # Activation Function
         self.softmax = nn.Softmax(dim=1)
 
-    def forward(self, x, input_size):
+    def forward(self, x):
         # h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device=x.device)
         # c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device=x.device)
 
@@ -45,8 +45,8 @@ class LSTM(nn.Module):
         # c0 = self.c0.expand(-1, x.size(0), -1).contiguous()
         
         # Initial trainable hidden unit h0 and memory unit c0
-        h0 = nn.Parameter(torch.zeros(self.num_layers, input_size, self.hidden_size))
-        c0 = nn.Parameter(torch.zeros(self.num_layers, input_size, self.hidden_size))
+        h0 = nn.Parameter(torch.zeros(self.num_layers, x.size(0), self.hidden_size)).cuda()
+        c0 = nn.Parameter(torch.zeros(self.num_layers, x.size(0), self.hidden_size)).cuda()
         
         h0 = h0.expand(-1, x.size(0), -1).contiguous()
         c0 = c0.expand(-1, x.size(0), -1).contiguous()

@@ -37,7 +37,7 @@ def train_model(lstm, train_x, train_y):
 
     train_x = train_x[:, :-1, :]
 
-    max_epochs = 10000 # 训练轮次
+    max_epochs = 100 # 训练轮次
     
     
     
