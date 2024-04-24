@@ -48,8 +48,8 @@ class LSTM(nn.Module):
         h0 = nn.Parameter(torch.zeros(self.num_layers, x.size(0), self.hidden_size)).cuda()
         c0 = nn.Parameter(torch.zeros(self.num_layers, x.size(0), self.hidden_size)).cuda()
         
-        h0 = h0.expand(-1, x.size(0), -1).contiguous()
-        c0 = c0.expand(-1, x.size(0), -1).contiguous()
+        h0 = h0.expand(-1, x.size(0), -1).contiguous().cuda()
+        c0 = c0.expand(-1, x.size(0), -1).contiguous().cuda()
 
         
         lstm_out, _ = self.lstm(x, (h0, c0))
