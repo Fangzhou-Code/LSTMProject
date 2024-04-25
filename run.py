@@ -15,13 +15,13 @@ from matplotlib.ticker import PercentFormatter
 
 
 # 初始化模型和数据
-def initialize_model_data():
+def initialize_model_data(input_dim):
     INPUT_SIZE = 3
     HIDDEN_SIZE = 64
     NUM_LAYERS = 3
     PRED_OUTPUT_SIZE = 3
     CLAS_OUTPUT_SIZE = 4
-    train_x, train_y = Dataset.generate_car_data(num_samples=10000, input_dim=20, per_positive=0.7)
+    train_x, train_y = Dataset.generate_car_data(num_samples=10000, input_dim=input_dim, per_positive=0.7)
     lstm = LSTM(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, PRED_OUTPUT_SIZE, CLAS_OUTPUT_SIZE)
     return lstm, train_x, train_y
 def initialize_test_data(input_dim, per_positive):
@@ -29,15 +29,13 @@ def initialize_test_data(input_dim, per_positive):
     return test_x, test_y
 
 # 训练模型
-def train_model(lstm, train_x, train_y):
+def train_model(lstm, train_x, train_y, max_epochs):
     optimizer = optim.Adam(lstm.parameters(), lr=1e-2, weight_decay=1e-5)
 
     train_y_pred = train_x[:, -1, :]  # 预测任务标签
     train_y_clas = train_y  # 分类任务标签
 
     train_x = train_x[:, :-1, :]
-
-    max_epochs = 5000 # 训练轮次
     
     # 训练轮次
     epoch_list = []
@@ -138,7 +136,7 @@ class DeviceAuthentication:
         self.device_id = device_id
         self.manufacturer = manufacturer
         self.identifier = self.device_id+self.manufacturer
-    def authenticate_device(self, pred_labels):
+    def authenticate_device(self, pred_labels): #[1x4] 1000 0100 0010 0001
         if(pred_labels[0,0].item() == 1):
             return True
         else:
@@ -189,7 +187,8 @@ if __name__ == "__main__":
     start_time = time.time() 
 
     # 初始化
-    lstm, train_x, train_y = initialize_model_data()
+    input_dim = 10
+    lstm, train_x, train_y = initialize_model_data(input_dim)
 
     # 加速（CPU记得注释掉）
     lstm = lstm.cuda()
@@ -198,7 +197,8 @@ if __name__ == "__main__":
     
 
     # 训练
-    loss_pos_list, accuracy_list, loss_list, epoch_list = train_model(lstm, train_x, train_y)
+    loss_pos_list, accuracy_list, loss_list, epoch_list = train_model(lstm, train_x, 
+                                                                      train_y, max_epochs=5000)
     save_model(lstm)
     print("...Training Finished...")    
     end_time = time.time()
@@ -209,28 +209,33 @@ if __name__ == "__main__":
     max_num = 10 # 身份凭证最大使用次数
     use_num = 0 # 初始化使用次数
     car_num = 100 # 验证小车数量
-    test_loss_sum = 0 # 小车损失值总和
-    test_acc_sum = 0 # 小车acc总和
+    test_loss_sum = 0 # 小车更新身份凭证loss总和
+    test_acc_sum = 0 # 小车更新身份凭证acc总和
+    ori_loss_sum = 0 # 小车不更新身份凭证loss总和
+    ori_acc_sum = 0 # 小车不更新身份凭证acc总和
     # 进行设备身份验证，发送身份凭证
     for i in range(car_num): # 每一辆小车进行验证
         # 模拟一个小车 （后续可以随机或者导入数据集）
         device_id = "device123"
         manufacturer = "Example Inc."
         device = DeviceAuthentication(device_id, manufacturer)# 实例化设备验证类
-        final_time = generate_final_time(10, 0, 3) +20 # 时间必须大于20
-        test_x, test_y = initialize_test_data(final_time, per_positive)
-        test_x = test_x.cuda()
+        final_time = generate_final_time(10, 0, 3) + input_dim # 时间必须大于input_dim
+        test_x, test_y = initialize_test_data(final_time, per_positive) #[1,final_time,3] 
+        test_x = test_x.cuda() 
         test_y = test_y.cuda()
         test_loss_list = []
         test_acc_list = []
-        for i in range(20, final_time):
-            test_loss, test_acc, pred_labels = test_model(lstm, test_x[:, i-20:i, :], test_y)
-            test_loss_list.append(test_loss.detach().cpu())
-            test_acc_list.append(test_acc.detach().cpu())
+        for i in range(input_dim, final_time):
+            test_loss, test_acc, pred_labels = test_model(lstm, test_x[:, i-input_dim:i, :], test_y)
+            # test_loss_list.append(test_loss.detach().cpu())
+            # test_acc_list.append(test_acc.detach().cpu())
+            if i==20: # 存储不更新身份凭证下小车的acc和loss
+                ori_loss_sum += test_loss.detach().cpu()
+                ori_acc_sum += test_acc.detach().cpu()
             if device.authenticate_device(pred_labels):
                 # 如果设备验证通过，下发凭证和密钥对
                 print("Credential")
-                # credential, public_key, private_key = device.issue_credentials()
+                # credential, public_key, private_key = device.issue_credentials() 
                 # print("Credential:", credential)
                 # print("Public Key:", public_key)
                 # print("Private Key:", private_key)
@@ -239,11 +244,15 @@ if __name__ == "__main__":
                 break
         print("Maximum usage reached, destroy authentication.")
         print("test_loss_list",type(test_loss_list))
-        test_loss_sum += np.mean(test_loss_list)
-        test_acc_sum += np.mean(test_acc_list)
+        # test_loss_sum += np.mean(test_loss_list)
+        # test_acc_sum += np.mean(test_acc_list)
+        test_loss_sum += test_loss.detach().cpu()
+        test_acc_sum += test_acc.detach().cpu()
     # 输出
-    print('Test Loss: {:.5f}'.format(test_loss_sum))
-    print('Test Accuracy: {:.2f}%'.format(test_acc_sum)) 
+    print('不更新身份凭证Test Loss: {:.5f}'.format(ori_loss_sum))
+    print('不更新身份凭证Test Accuracy: {:.2f}%'.format(ori_acc_sum))
+    print('更新身份凭证Test Loss: {:.5f}'.format(test_loss_sum))
+    print('更新身份凭证Test Accuracy: {:.2f}%'.format(test_acc_sum)) 
     print("...Test Finished...")
     execution_time = end_time - start_time
     print(f"模型运行时间: {execution_time}秒")
@@ -251,14 +260,12 @@ if __name__ == "__main__":
     # 画图
     plot_curve(loss_pos_list, accuracy_list, loss_list, epoch_list) # 训练集acc, loss
     plt.savefig('./results/training_curve.pdf')
-    error_rate = 1- per_positive # 错误率和测试准确率
     # 柱状图数据
-    categories = ['Original', 'LSTM']
+    categories = ['Original', 'LSTM不更新身份凭证', 'LSTM更新身份凭证']
     # 将错误率和错误率与测试准确率的乘积转换为百分比
-    values = [per_positive * 100, (test_acc_sum / 100) * 100]
-
+    values = [per_positive * 100, (ori_acc_sum / 100) * 100, (test_acc_sum / 100) * 100,]
     # 绘制柱状图
-    plt.bar(categories, values, color=['#FFA07A', '#87CEEB'])
+    plt.bar(categories, values, color=['#FFA07A', '#87CEEB', '#4682B4'])
     plt.ylabel('Percentage')  # 纵坐标标签改为百分比
     # 设置中文字体
     # 解决中文显示问题
