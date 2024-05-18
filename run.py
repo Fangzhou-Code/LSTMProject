@@ -15,8 +15,8 @@ from matplotlib.ticker import PercentFormatter
 
 
 # 初始化模型和数据
-def initialize_model_data(input_dim):
-    INPUT_SIZE = 3
+def initialize_model_data(INPUT_SIZE, input_dim):
+    INPUT_SIZE = INPUT_SIZE
     HIDDEN_SIZE = 64
     NUM_LAYERS = 3
     PRED_OUTPUT_SIZE = 3
@@ -188,7 +188,7 @@ if __name__ == "__main__":
 
     # 初始化
     input_dim = 10
-    lstm, train_x, train_y = initialize_model_data(input_dim)
+    lstm, train_x, train_y = initialize_model_data(3, input_dim)
 
     # 加速（CPU记得注释掉）
     lstm = lstm.cuda()
@@ -198,7 +198,7 @@ if __name__ == "__main__":
 
     # 训练
     loss_pos_list, accuracy_list, loss_list, epoch_list = train_model(lstm, train_x, 
-                                                                      train_y, max_epochs=5000)
+                                                                      train_y, max_epochs=500)
     save_model(lstm)
     print("...Training Finished...")    
     end_time = time.time()
@@ -274,4 +274,5 @@ if __name__ == "__main__":
     plt.title(u'设备身份验证的准确率')
     plt.ylim(0, 100)
     plt.gca().yaxis.set_major_formatter(PercentFormatter())  # 设置纵坐标格式为百分比
+    plt.show()
     plt.savefig('./results/detect_curve.pdf')
