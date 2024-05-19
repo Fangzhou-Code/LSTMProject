@@ -73,3 +73,12 @@ class DeviceAuthentication:
             privkey = rsa.PrivateKey.load_pkcs1(private_key_file.read())
         return pubkey, privkey
 ```
+
+
+## 5. 对比
+定义行为模式
+
+* 测试集损失值、准确率的变化：折线图
+* 更新和不更新凭证设备身份验证的准确率：柱状图对比
+* 篡改时长：[1-10] 
+* 篡改时长位置: [2-5,7-10]
