@@ -216,7 +216,7 @@ if __name__ == "__main__":
     # 进行设备身份验证，发送身份凭证
     for i in range(car_num): # 每一辆小车进行验证
         # 模拟一个小车 （后续可以随机或者导入数据集）
-        device_id = "device123"
+        device_id = "device123" 
         manufacturer = "Example Inc."
         device = DeviceAuthentication(device_id, manufacturer)# 实例化设备验证类
         final_time = generate_final_time(10, 0, 3) + input_dim # 时间必须大于input_dim

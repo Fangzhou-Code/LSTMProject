@@ -1,9 +1,11 @@
 import numpy as np
 import random
 import torch
+import route
 
 
 def generate_car_data(num_samples, input_dim, per_positive):
+    # 初始化
     dataset = np.zeros((num_samples, input_dim, 3))
     labels = np.zeros((num_samples,4),dtype=int)
 
@@ -12,7 +14,20 @@ def generate_car_data(num_samples, input_dim, per_positive):
         pos_x = random.uniform(0, 10)
         pos_y = random.uniform(0, 10)
         status = "running" if random.random() < per_positive else random.choice(["seal", "maintenance", "waiting"])
-        
+        # 随机路线
+        route_number = random.randint(1,3)
+        start_point, end_point = route.get_route_coordinates(route_number)
+        print("Route", route_number, "coordinates:")
+        print("Start point:", start_point)
+        print("End point:", end_point)
+        # 根据路线确定小车速度
+        end_x = end_point[0]
+        end_y = end_point[1]
+        start_x = start_point[0]
+        start_y = start_point[1]
+        speed_x = (end_x - start_x) / input_dim
+        speed_y = (end_y - start_y) / input_dim
+
         # 正样本，运行状态
         if status == "running": 
             power = random.uniform(2, 100)  # 初始电量范围是大于2，保证运行状态下电量不会为0
@@ -24,8 +39,8 @@ def generate_car_data(num_samples, input_dim, per_positive):
                     dataset[i, j, 1] = pos_y
                 else:
                     # 假设小车以恒定速度移动
-                    dataset[i, j, 0] = dataset[i, j-1, 0] + random.uniform(0, 0.5)
-                    dataset[i, j, 1] = dataset[i, j-1, 1] + random.uniform(0, 0.5)
+                    dataset[i, j, 0] = dataset[i, j-1, 0] + speed_x
+                    dataset[i, j, 1] = dataset[i, j-1, 1] + speed_y
                 # 计算位移距离
                 if j > 0:
                     displacement = ((dataset[i, j, 0] - dataset[i, j-1, 0])**2 + (dataset[i, j, 1] - dataset[i, j-1, 1])**2)**0.5
@@ -61,8 +76,8 @@ def generate_car_data(num_samples, input_dim, per_positive):
                             dataset[i, j, 1] = pos_y
                             displacement = 0
                         else:
-                            dataset[i, j, 0] = dataset[i, j-1, 0] + random.uniform(0, 0.5)
-                            dataset[i, j, 1] = dataset[i, j-1, 1] + random.uniform(0, 0.5)
+                            dataset[i, j, 0] = dataset[i, j-1, 0] + speed_x
+                            dataset[i, j, 1] = dataset[i, j-1, 1] + speed_y
                             displacement = ((dataset[i, j, 0] - dataset[i, j-1, 0])**2 + (dataset[i, j, 1] - dataset[i, j-1, 1])**2)**0.5
                         # 电量消耗数据，与位移距离成正比
                         power -= displacement * random.uniform(0.05, 0.1) 
@@ -87,8 +102,8 @@ def generate_car_data(num_samples, input_dim, per_positive):
                             dataset[i, j, 1] = pos_y
                             displacement = 0
                         else:
-                            dataset[i, j, 0] = dataset[i, j-1, 0] + random.uniform(0, 0.5)
-                            dataset[i, j, 1] = dataset[i, j-1, 1] + random.uniform(0, 0.5)
+                            dataset[i, j, 0] = dataset[i, j-1, 0] + speed_x
+                            dataset[i, j, 1] = dataset[i, j-1, 1] + speed_y
                             # 计算位移距离
                             displacement = ((dataset[i, j, 0] - dataset[i, j-1, 0])**2 + (dataset[i, j, 1] - dataset[i, j-1, 1])**2)**0.5
                             # 存入电量消耗
