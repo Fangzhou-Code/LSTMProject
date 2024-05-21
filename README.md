@@ -79,7 +79,7 @@ class DeviceAuthentication:
 
 1. 定义正常模式
 
-定义正常运行路线
+定义正常运行路线:[route.py](./route.py)
 
 2. 对比实验
 
@@ -89,6 +89,8 @@ class DeviceAuthentication:
 * 篡改时长位置: [2-5,7-10] （暂时不做）
 
 3. 小车属性固定
+
+[device.py](./device.py)
 
 **固定属性:**
 

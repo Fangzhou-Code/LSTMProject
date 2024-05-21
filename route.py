@@ -30,7 +30,7 @@ if __name__=='__main__':
     route_number = 1
     start_point, end_point = get_route_coordinates(route_number)
     print("Route", route_number, "coordinates:")
-    print("Start point:", start_point[0], start_point[1])
-    print("End point:", end_point[0],end_point[1])
+    print("Start point:", start_point, start_point[0], start_point[1])
+    print("End point:", end_point, end_point[0],end_point[1])
     routes = [1, 2,3]
     plot_routes(routes)
