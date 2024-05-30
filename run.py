@@ -1,3 +1,7 @@
+'''
+注意：这个文件主函数里面的代码存在很多问题，对模型的训练和测试请参考train_test_model.py
+'''
+
 import time
 import torch
 import torch.nn.functional as F
@@ -12,21 +16,34 @@ import numpy as np
 import random
 import Dataset
 from matplotlib.ticker import PercentFormatter
-
+import pickle
 
 # 初始化模型和数据
-def initialize_model_data(INPUT_SIZE, input_dim):
+def initialize_model_data(INPUT_SIZE, input_dim, NEW_DATA = 0):
     INPUT_SIZE = INPUT_SIZE
     HIDDEN_SIZE = 64
     NUM_LAYERS = 3
     PRED_OUTPUT_SIZE = 3
-    CLAS_OUTPUT_SIZE = 4
-    train_x, train_y = Dataset.generate_car_data(num_samples=10000, input_dim=input_dim, per_positive=0.7)
-    lstm = LSTM(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, PRED_OUTPUT_SIZE, CLAS_OUTPUT_SIZE)
-    return lstm, train_x, train_y
-def initialize_test_data(input_dim, per_positive):
-    test_x, test_y = Dataset.generate_car_data(num_samples=1, input_dim=50, per_positive=0.7)
-    return test_x, test_y
+    CLAS_OUTPUT_SIZE = 5
+    if NEW_DATA:
+        train_x, train_y,device_list = Dataset.generate_car_data(num_samples=10000, input_dim=input_dim, per_positive=NEW_DATA)
+        lstm = LSTM(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, PRED_OUTPUT_SIZE, CLAS_OUTPUT_SIZE)
+    else:
+        lstm = torch.load('Model/lstmmodel.pt')
+        train_x = torch.load('Dataset/traindataset.pt')
+        train_y = torch.load('Dataset/trainlabels.pt')
+        with open('Dataset/traindevicelist.pkl', 'rb') as f:
+            device_list = pickle.load(f)
+    return lstm, train_x, train_y, device_list
+def initialize_test_data(input_dim, NEW_DATA= 0):
+    if NEW_DATA:
+        test_x, test_y,device_list = Dataset.generate_car_data(num_samples=1000, input_dim=input_dim, per_positive=NEW_DATA)
+    else:
+        test_x = torch.load('Dataset/testdataset.pt')
+        test_y = torch.load('Dataset/testlabels.pt')
+        with open('Dataset/testdevicelist.pkl', 'rb') as f:
+            device_list = pickle.load(f)
+    return test_x, test_y, device_list
 
 # 训练模型
 def train_model(lstm, train_x, train_y, max_epochs):
@@ -137,10 +154,20 @@ class DeviceAuthentication:
         self.manufacturer = manufacturer
         self.identifier = self.device_id+self.manufacturer
     def authenticate_device(self, pred_labels): #[1x4] 1000 0100 0010 0001
-        if(pred_labels[0,0].item() == 1):
-            return True
-        else:
-            return False
+        for i in range(pred_labels.size(0)):
+            single_pred_label = pred_labels[i]
+            # 将 one-hot 编码的标签转换为类别索引
+            label_index = torch.argmax(single_pred_label).item()
+            # print(f"Sample {i} prediction: {single_pred_label}, Label index: {label_index}")
+            if label_index == 0 or label_index == 1:
+                # 如果设备验证通过，下发凭证和密钥对
+                print("Credential")
+                # credential, public_key, private_key = device.issue_credentials() 
+                # print("Credential:", credential)
+                # print("Public Key:", public_key)
+                # print("Private Key:", private_key)
+            else:
+                print("Device authentication failed.")
     def issue_credentials(self):
         # 生成随机的凭证和密钥对
         credential = str(uuid.uuid4())
@@ -187,8 +214,8 @@ if __name__ == "__main__":
     start_time = time.time() 
 
     # 初始化
-    input_dim = 10
-    lstm, train_x, train_y = initialize_model_data(3, input_dim)
+    input_dim = 20
+    lstm, train_x, train_y,device_train = initialize_model_data(3, input_dim)
 
     # 加速（CPU记得注释掉）
     lstm = lstm.cuda()
@@ -198,7 +225,7 @@ if __name__ == "__main__":
 
     # 训练
     loss_pos_list, accuracy_list, loss_list, epoch_list = train_model(lstm, train_x, 
-                                                                      train_y, max_epochs=500)
+                                                                      train_y, max_epochs=5000)
     save_model(lstm)
     print("...Training Finished...")    
     end_time = time.time()
@@ -214,13 +241,14 @@ if __name__ == "__main__":
     ori_loss_sum = 0 # 小车不更新身份凭证loss总和
     ori_acc_sum = 0 # 小车不更新身份凭证acc总和
     # 进行设备身份验证，发送身份凭证
+    
     for i in range(car_num): # 每一辆小车进行验证
         # 模拟一个小车 （后续可以随机或者导入数据集）
         device_id = "device123" 
         manufacturer = "Example Inc."
         device = DeviceAuthentication(device_id, manufacturer)# 实例化设备验证类
         final_time = generate_final_time(10, 0, 3) + input_dim # 时间必须大于input_dim
-        test_x, test_y = initialize_test_data(final_time, per_positive) #[1,final_time,3] 
+        test_x, test_y,device_test = initialize_test_data(final_time) #[1,final_time,3] 
         test_x = test_x.cuda() 
         test_y = test_y.cuda()
         test_loss_list = []

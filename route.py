@@ -2,9 +2,9 @@ import matplotlib.pyplot as plt
 
 def get_route_coordinates(route_number):
     if route_number == 1:
-        return ((0, 0), (5, 5))
+        return ((0, 0), (15, 15))
     elif route_number == 2:
-        return ((5, 5), (10, 0))
+        return ((15, 15), (10, 0))
     elif route_number == 3:
         return ((10, 0), (0, 0))
     else:
@@ -32,5 +32,5 @@ if __name__=='__main__':
     print("Route", route_number, "coordinates:")
     print("Start point:", start_point, start_point[0], start_point[1])
     print("End point:", end_point, end_point[0],end_point[1])
-    routes = [1, 2,3]
+    routes = [1,2,3]
     plot_routes(routes)
