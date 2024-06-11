@@ -6,18 +6,7 @@ import math
 import device
 import pickle
 
-def is_nearby(point, target, radius):
-    """
-    判断 point 是否在 target 点的附近
-    :param point: 点的坐标 (x, y)
-    :param target: 目标点的坐标 (x, y)
-    :param radius: 距离阈值
-    :return: 如果 point 在 target 附近则返回 True，否则返回 False
-    """
-    x1, y1 = point
-    x2, y2 = target
-    distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-    return distance < radius
+
 
 
 def generate_car_data(num_samples, input_dim, per_positive):

@@ -4,9 +4,11 @@ import torch
 start_time = time.time() 
 
 # 初始化
-input_dim = 20
-lstm, train_x, train_y, device_train_list = run.initialize_model_data(3, input_dim, 0)
+input_dim = 10
+per_positive = 0
+lstm, train_x, train_y, device_train_list = run.initialize_model_data(3, input_dim, per_positive)
 train_epochs = 500
+
 
 # 加速（CPU记得注释掉）
 lstm = lstm.cuda()
@@ -27,9 +29,12 @@ lstm = run.load_model()
 device_id = "device123" 
 manufacturer = "Example Inc."
 device = run.DeviceAuthentication(device_id, manufacturer)# 实例化设备验证类
-test_x, test_y, device_test_list = run.initialize_test_data(input_dim, 0) 
+test_x, test_y, device_test_list = run.initialize_test_data(input_dim, per_positive) 
+
+# 加速（CPU记得注释掉）
 test_x = test_x.cuda() 
 test_y = test_y.cuda()
+
 test_loss, test_acc, pred_labels = run.test_model(lstm, test_x, test_y)
 print("...Test Finished...") 
 print("test_acc=",test_acc)

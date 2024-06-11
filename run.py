@@ -27,6 +27,12 @@ def initialize_model_data(INPUT_SIZE, input_dim, NEW_DATA = 0):
     CLAS_OUTPUT_SIZE = 5
     if NEW_DATA:
         train_x, train_y,device_list = Dataset.generate_car_data(num_samples=10000, input_dim=input_dim, per_positive=NEW_DATA)
+        torch.save(train_x, 'Dataset/traindataset.pt')
+        torch.save(train_y, 'Dataset/trainlabels.pt')
+        # 保存list数组到本地文件
+        with open('Dataset/traindevicelist.pkl', 'wb') as f:
+            pickle.dump(device_list, f)
+        print("...train Create Finished...")
         lstm = LSTM(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, PRED_OUTPUT_SIZE, CLAS_OUTPUT_SIZE)
     else:
         lstm = torch.load('Model/lstmmodel.pt')
@@ -38,6 +44,12 @@ def initialize_model_data(INPUT_SIZE, input_dim, NEW_DATA = 0):
 def initialize_test_data(input_dim, NEW_DATA= 0):
     if NEW_DATA:
         test_x, test_y,device_list = Dataset.generate_car_data(num_samples=1000, input_dim=input_dim, per_positive=NEW_DATA)
+        torch.save(test_x, 'Dataset/testdataset.pt')
+        torch.save(test_y, 'Dataset/testlabels.pt') 
+        # 保存list数组到本地文件
+        with open('Dataset/testdevicelist.pkl', 'wb') as f:
+            pickle.dump(device_list, f)
+        print("...test Create Finished...")
     else:
         test_x = torch.load('Dataset/testdataset.pt')
         test_y = torch.load('Dataset/testlabels.pt')
