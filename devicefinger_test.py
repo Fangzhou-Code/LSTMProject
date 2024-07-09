@@ -231,45 +231,46 @@ def main():
         print(f"误判率: {false_positive_rate}")
         print()
 
-    # 画设备指纹和LSTM准确率柱状图
+   
     fig, ax = plt.subplots()
 
-    bar_width = 0.35  # 柱子的宽度
-    index = np.arange(len(negative_ratios))  # 每个比例的索引
-
+    bar_width = 0.1  # 柱子的宽度
+    index = np.arange(len(negative_ratios)) * 0.3  # 每个比例的索引
+    print("index=",index)
     ft_accs = [result[1] for result in results]
     lstm_accs = [result[2] for result in results]
 
-    ax.bar(index - bar_width, ft_accs, bar_width, label='设备指纹', color='#94CE87')  # 向左移动bar_width
-    ax.bar(index, lstm_accs, bar_width, label='LSTM', color='#EE634B')  # 原始位置
 
+    # 画设备指纹和LSTM准确率柱状图
+    ax.bar(index - bar_width, ft_accs, bar_width, label='设备指纹', color='#3CB371')  # 向左移动bar_width
+    ax.bar(index, lstm_accs, bar_width, label='设备属性', color='#FF8C00')  # 原始位置
     ax.set_xlabel('Negative Sample Ratio')
     ax.set_ylabel('Accuracy')
     ax.set_title('身份验证准确率')
     ax.set_xticks(index - bar_width / 2)  # 调整xticks的位置
     ax.set_xticklabels([f'{ratio:.1%}' for ratio in negative_ratios])  # 格式化横坐标标签为百分比
-    ax.legend(['设备指纹', 'LSTM'], loc='upper right')
-
+    ax.set_ylim(top=ax.get_ylim()[1] * 1.15)  # 调整纵坐标轴的最大值离纵坐标最上方的距离:将最大值上移15%
+    # midpoint = index[len(index) // 2] 
+    # ax.legend(['设备指纹', '设备属性'], loc='upper center', bbox_to_anchor=(0.83, 1))
+    ax.legend(['设备指纹', '设备属性'], loc='upper right')
     plt.rcParams['font.sans-serif'] = ['SimSun']  # 设置中文字体为宋体
     plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
     plt.savefig('./results/accuracy_comparison_bar.png')
     plt.show()
 
+
     # 画误判率柱状图
     fig, ax = plt.subplots()
-
     false_positive_rates = [(1-result[3]) for result in results]
-
-    ax.bar(index - bar_width, ft_false_positive_rates, bar_width, label='设备指纹', color='#94CE87')  # 原始位置
-    ax.bar(index , false_positive_rates, bar_width, label='LSTM', color='#EE634B')  # 向左移动bar_width
-
+    ax.bar(index - bar_width, ft_false_positive_rates, bar_width, label='设备指纹', color='#3CB371')  # 原始位置
+    ax.bar(index , false_positive_rates, bar_width, label='设备属性', color='#FF8C00')  # 向左移动bar_width
     ax.set_xlabel('Negative Sample Ratio')
     ax.set_ylabel('False Positive Rate')
     ax.set_title('伪造设备检出率')
     ax.set_xticks(index - bar_width / 2)  # 调整xticks的位置
     ax.set_xticklabels([f'{ratio:.1%}' for ratio in negative_ratios])  # 格式化横坐标标签为百分比
-    ax.legend(['设备指纹', 'LSTM'], loc='upper right')
-
+    ax.set_ylim(top=ax.get_ylim()[1] * 1.15)  # 调整纵坐标轴的最大值离纵坐标最上方的距离:将最大值上移15%
+    ax.legend(['设备指纹', '设备属性'], loc='upper right')
     plt.rcParams['font.sans-serif'] = ['SimSun']  # 设置中文字体为宋体
     plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
     plt.savefig('./results/false_positive_rate_bar.png')
@@ -277,3 +278,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
