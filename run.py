@@ -57,8 +57,8 @@ def initialize_test_data(input_dim, per_positive, NEW_DATA= 0):
     return test_x, test_y, device_list
 
 # 训练模型
-def train_model(lstm, train_x, train_y, max_epochs):
-    optimizer = optim.Adam(lstm.parameters(), lr=1e-2, weight_decay=1e-5)
+def train_model(lstm, train_x, train_y, max_epochs, lr=1e-2, weight_decay=1e-5):
+    optimizer = optim.Adam(lstm.parameters(), lr=lr, weight_decay=1e-5)
 
     train_y_pred = train_x[:, -1, :]  # 预测任务标签
     train_y_clas = train_y  # 分类任务标签
@@ -88,7 +88,7 @@ def train_model(lstm, train_x, train_y, max_epochs):
             break
         elif (epoch + 1) % 10 == 0:
             # 测试模型在训练集上的预测损失与分类精度用于画图展示
-            loss_pred, accuracy, _ = test_model(lstm, train_x, train_y)
+            loss_pred, accuracy, _, _, _ = test_model(lstm, train_x, train_y)
             epoch_list.append(epoch + 1)
             loss_list.append(loss.item())
             loss_pred_list.append(loss_pred.detach().cpu().numpy())
@@ -124,13 +124,13 @@ def test_model(lstm, test_x, test_y):
     pred_labels = F.one_hot(torch.argmax(pred_y_clas, dim=1), num_classes=lstm.clas_output_size)
     accuracy = torch.mean(torch.eq(pred_labels, test_y_clas).all(dim=1).float()) 
 
-    return loss_pos, accuracy, pred_labels
+    return loss_pos, accuracy, pred_y_pred, pred_y_clas, pred_labels
 
 
-# 画图
+
 def plot_curve(loss_pred_list, accuracy_list, loss_list, epoch_list):
     plt.figure(figsize=(12, 6))
-    
+
     # 绘制总损失图
     plt.subplot(1, 3, 1)
     plt.plot(epoch_list, loss_list, label='Training Loss', color='red')
@@ -158,6 +158,54 @@ def plot_curve(loss_pred_list, accuracy_list, loss_list, epoch_list):
     plt.tight_layout()
     plt.show()
 
+def plot_comparison(test_loss_edge, test_acc_edge, test_loss_cloud, test_acc_cloud):
+    # 如果输入是 GPU 张量，先移动到 CPU 并转换为 numpy 数组
+    if isinstance(test_loss_edge, torch.Tensor):
+        test_loss_edge = test_loss_edge.detach().cpu().numpy()
+    if isinstance(test_acc_edge, torch.Tensor):
+        test_acc_edge = test_acc_edge.detach().cpu().numpy()
+    if isinstance(test_loss_cloud, torch.Tensor):
+        test_loss_cloud = test_loss_cloud.detach().cpu().numpy()
+    if isinstance(test_acc_cloud, torch.Tensor):
+        test_acc_cloud = test_acc_cloud.detach().cpu().numpy()
+
+    # 设置柱状图数据
+    labels = ['Before fine-tuning', 'After fine-tuning']
+    losses = [test_loss_edge, test_loss_cloud]
+    accuracies = [test_acc_edge, test_acc_cloud]
+
+    x = np.arange(len(labels))  # 横轴刻度的位置
+    width = 0.35  # 柱状图的宽度
+
+    # 创建图形和子图
+    fig, ax1 = plt.subplots(figsize=(8, 6))
+
+    # 绘制损失的柱状图
+    ax1.bar(x - width/2, losses, width, label='Loss', color='#3CB371')
+    ax1.set_xlabel('Before fine-tuning VS. After fine-tuning')
+    ax1.set_ylabel('Loss', color='#3CB371')
+    ax1.tick_params(axis='y', labelcolor='#3CB371')
+    ax1.legend(loc='upper left')
+    # ax1.set_ylim(50, 70)  # 限制损失的 y 轴范围
+
+    # 在同一个子图中共享 x 轴绘制准确率的柱状图
+    ax2 = ax1.twinx()  # 使用相同的 x 轴
+    ax2.bar(x + width/2, accuracies, width, label='Accuracy', color='#FF8C00')
+    ax2.set_ylabel('Accuracy', color='#FF8C00')
+    ax2.tick_params(axis='y', labelcolor='#FF8C00')
+    ax2.legend(loc='upper right')
+    ax2.set_ylim(0.5, 1)  # 限制准确率的 y 轴范围
+
+    # 添加标题和标签
+    # plt.title('Comparison of Test Results between Edge and Cloud Deployment')
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(labels)
+
+    # 自动调整布局
+    fig.tight_layout()
+
+    # 展示图像
+    plt.show()
 
 class DeviceAuthentication:
     def __init__(self, device_id, manufacturer):

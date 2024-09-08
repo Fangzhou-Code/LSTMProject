@@ -5,6 +5,7 @@ import torch
 
 
 if __name__ == "__main__":
+    # 计算时间
     start_time = time.time() 
 
     # 初始化
@@ -12,7 +13,6 @@ if __name__ == "__main__":
     per_positive = 0.6
     NEW_DATA = 0
     train_epochs = 500
-
 
     lstm, train_x, train_y, device_train_list = run.initialize_model_data(3, input_dim, per_positive, NEW_DATA)
     test_x, test_y, device_test_list = run.initialize_test_data(input_dim, per_positive, NEW_DATA) 
@@ -40,8 +40,6 @@ if __name__ == "__main__":
     manufacturer = "Example Inc."
     device = run.DeviceAuthentication(device_id, manufacturer)# 实例化设备验证类
     
-
-
 
     test_loss, test_acc, pred_labels = run.test_model(lstm, test_x, test_y)
     print("...Test Finished...") 
