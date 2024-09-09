@@ -159,6 +159,11 @@ def generate_car_data(num_samples, input_dim, per_positive):
 
 
 
+
+
+
+
+
 if __name__=="__main__":
     # 生成训练集
     traindataset,trainlabels,traindevicelist = generate_car_data(num_samples=10000, input_dim=20, per_positive=0.6)
