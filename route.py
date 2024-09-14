@@ -11,15 +11,15 @@ def get_route_coordinates(route_number):
         return ((10, 0), (0, 0))
     # [4, 5, 6, 7, 8] 叉车路线
     elif route_number == 4:
-        return ((0, 0), (0, 4))
+        return ((0, 0), (2, 4))
     elif route_number == 5:
-        return ((0, 4), (5, 6))
+        return ((2, 4), (5, 6))
     elif route_number == 6:
         return ((5, 6), (10, 4))
     elif route_number == 7:
-        return ((10, 4), (10, 0))
+        return ((10, 4), (12, 0))
     elif route_number == 8:
-        return ((10, 0), (0, 0))
+        return ((12, 0), (0, 0))
     # [9, 10, 11, 12] 无人机路线
     elif route_number == 9:
         return ((0, 0, 0), (4, -3, 6))
@@ -46,12 +46,12 @@ def plot_routes_3d(route_numbers):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    ax.set_title('3D Car Routes')
+    ax.set_title('3D UAV Routes')
     plt.grid(True)
     plt.show()
 
 
-def plot_routes(route_numbers):
+def plot_routes(route_numbers, str):
     plt.figure(figsize=(8, 6))
 
     for route_number in route_numbers:
@@ -62,19 +62,17 @@ def plot_routes(route_numbers):
 
     plt.xlabel('X')
     plt.ylabel('Y')
-    plt.title('Car Routes')
+    plt.title(f'{str} Routes')
     plt.grid(True)
     plt.show()
 
 if __name__=='__main__':
-    route_number = 1
-    start_point, end_point = get_route_coordinates(route_number)
-    print("Route", route_number, "coordinates:")
-    print("Start point:", start_point, start_point[0], start_point[1])
-    print("End point:", end_point, end_point[0],end_point[1])
+    # 画小车路线图
     routes = [1,2,3]
-    plot_routes(routes)
+    plot_routes(routes, "Car")
+    # 画叉车路线图
     routes = [4,5,6,7,8]
-    plot_routes(routes)
+    plot_routes(routes, "ForkLift")
+    # 画UAV图
     routes = [9, 10, 11, 12]
     plot_routes_3d(routes)

@@ -58,7 +58,7 @@ def initialize_test_data(input_dim, per_positive, NEW_DATA= 0):
 
 # 训练模型
 def train_model(lstm, train_x, train_y, max_epochs, lr=1e-2, weight_decay=1e-5):
-    optimizer = optim.Adam(lstm.parameters(), lr=lr, weight_decay=1e-5)
+    optimizer = optim.Adam(lstm.parameters(), lr=lr, weight_decay=weight_decay)
 
     train_y_pred = train_x[:, -1, :]  # 预测任务标签
     train_y_clas = train_y  # 分类任务标签
