@@ -302,7 +302,7 @@ def generate_forklift_data(num_samples, input_dim, per_positive):
     
     dataset_ = torch.tensor(dataset, dtype=torch.float32)
     labels_ = torch.tensor(labels, dtype=torch.float32)
-    print("...generate_car_data run Finished...")
+    print("...generate_forklift_data run Finished...")
     return dataset_, labels_, device_list
 
 
