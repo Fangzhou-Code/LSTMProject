@@ -23,7 +23,7 @@ def initialize_model_data(INPUT_SIZE, input_dim, per_positive, NEW_DATA = 0):
     INPUT_SIZE = INPUT_SIZE
     HIDDEN_SIZE = 64
     NUM_LAYERS = 3
-    PRED_OUTPUT_SIZE = 3
+    PRED_OUTPUT_SIZE = INPUT_SIZE
     CLAS_OUTPUT_SIZE = 5
     if NEW_DATA:
         train_x, train_y,device_list = Dataset.generate_car_data(num_samples=10000, input_dim=input_dim, per_positive=per_positive)

@@ -11,7 +11,7 @@ import pickle
 
 def generate_car_data(num_samples, input_dim, per_positive):
     # 初始化
-    dataset = np.zeros((num_samples, input_dim, 3))
+    dataset = np.zeros((num_samples, input_dim, 4))
     labels = np.zeros((num_samples,5),dtype=int)
     waiting_time = 6 # 待料状态下需要等待6秒
     device_list = []
@@ -22,13 +22,8 @@ def generate_car_data(num_samples, input_dim, per_positive):
         # 随机路线
         route_number = random.randint(1,3)
         start_point, end_point = route.get_route_coordinates(route_number)
-        # print("Route", route_number, "coordinates:")
-        # print("Start point:", start_point)
-        # print("End point:", end_point)
-        end_x = end_point[0]
-        end_y = end_point[1]
-        start_x = start_point[0]
-        start_y = start_point[1]
+        start_x, start_y, start_z = start_point
+        end_x, end_y, end_z = end_point
         # 随机初始化小车的静态属性和位置和状态
         all_data = device.generate_vehicle_data()
         fingerpoint = device.get_attribute(all_data, 'fingerprint', 'fingerprint')
@@ -50,7 +45,7 @@ def generate_car_data(num_samples, input_dim, per_positive):
                     if j == 0:
                         dataset[i, j, 0] = pos_x
                         dataset[i, j, 1] = pos_y
-                        dataset[i, j, 2] = power
+                        dataset[i, j, 3] = power
                         displacement = 0
                     else:
                         # 假设小车以恒定速度移动
@@ -59,7 +54,7 @@ def generate_car_data(num_samples, input_dim, per_positive):
                         # 计算位移距离
                         displacement = ((dataset[i, j, 0] - dataset[i, j-1, 0])**2 + (dataset[i, j, 1] - dataset[i, j-1, 1])**2)**0.5
                         power -= displacement * random.uniform(0.05, 0.1) 
-                        dataset[i, j, 2] = power
+                        dataset[i, j, 3] = power
 
             else: # 待料状态：小车到达工厂等待n秒装车后进行运行
                 # 思路：选择一个小车到达工厂的时间去倒推小车之前的位置和电量，顺推小车未来的位置和电量
@@ -72,18 +67,18 @@ def generate_car_data(num_samples, input_dim, per_positive):
                         dataset[i, j, 1] = end_y - (stop_time - j) * speed_y
                         displacement = ((dataset[i, stop_time, 0] - dataset[i, j, 0])**2 + (dataset[i, stop_time, 1] - dataset[i, j, 1])**2)**0.5
                         power -= displacement * random.uniform(0.05, 0.1)
-                        dataset[i, j, 2] = power 
+                        dataset[i, j, 3] = power 
                     else: 
                         if j > stop_time + waiting_time:
                             dataset[i, j, 0] = dataset[i, j-1, 0] + speed_x
                             dataset[i, j, 1] = dataset[i, j-1, 1] + speed_y
                             displacement = ((dataset[i, stop_time, 0] - dataset[i, j, 0])**2 + (dataset[i, stop_time, 1] - dataset[i, j, 1])**2)**0.5
                             power -= displacement * random.uniform(0.05, 0.1)
-                            dataset[i, j, 2] = power
+                            dataset[i, j, 3] = power
                         else:
                             dataset[i, j, 0] = end_x
                             dataset[i, j, 1] = end_y
-                            dataset[i, j, 2] = power
+                            dataset[i, j, 3] = power
                    
         # 负样本，错误状态
         else:
@@ -99,7 +94,7 @@ def generate_car_data(num_samples, input_dim, per_positive):
                 for j in range(input_dim):
                     dataset[i, j, 0] = pos_x
                     dataset[i, j, 1] = pos_y
-                    dataset[i, j, 2] = power
+                    dataset[i, j, 3] = power
             
             # 检修状态:小车在路上坏了，停止移动，某个随机时间停到某个地点
             elif status == "maintenance":
@@ -114,12 +109,12 @@ def generate_car_data(num_samples, input_dim, per_positive):
                         displacement = ((dataset[i, stop_time, 0] - dataset[i, j, 0])**2 + (dataset[i, stop_time, 1] - dataset[i, j, 1])**2)**0.5
                         # 电量消耗数据，与位移距离成正比
                         power -= displacement * random.uniform(0.05, 0.1)         
-                        dataset[i, j, 2] = power
+                        dataset[i, j, 3] = power
                     else:
                         # 小车停止移动，位置和电量不再变化
                         dataset[i, j, 0] = pos_x
                         dataset[i, j, 1] = pos_y
-                        dataset[i, j, 2] = power
+                        dataset[i, j, 3] = power
             
             # 没电状态
             elif status == "depleted":
@@ -144,12 +139,12 @@ def generate_car_data(num_samples, input_dim, per_positive):
                         # 小车停止移动，电量为0
                         dataset[i, j, 0] = dataset[i, stop_time, 0]
                         dataset[i, j, 1] = dataset[i, stop_time, 1]
-                        dataset[i, j, 2] = 0
+                        dataset[i, j, 3] = 0
                 power = sum(consume_power)
-                dataset[i, 0, 2] = power # 重新存入初始电量
+                dataset[i, 0, 3] = power # 重新存入初始电量
                 for j in range(stop_time):
                      power -= consume_power[j]
-                     dataset[i,j+1,2] = max(0,power)
+                     dataset[i,j+1,3] = max(0,power)
     
     dataset_ = torch.tensor(dataset, dtype=torch.float32)
     labels_ = torch.tensor(labels, dtype=torch.float32)
@@ -159,7 +154,7 @@ def generate_car_data(num_samples, input_dim, per_positive):
 
 def generate_forklift_data(num_samples, input_dim, per_positive):
     # 初始化
-    dataset = np.zeros((num_samples, input_dim, 3))
+    dataset = np.zeros((num_samples, input_dim, 4))
     labels = np.zeros((num_samples,5),dtype=int)
     waiting_time = 6 # 待料状态下需要等待6秒
     device_list = []
@@ -170,13 +165,8 @@ def generate_forklift_data(num_samples, input_dim, per_positive):
         # 随机路线
         route_number = random.randint(4,8) 
         start_point, end_point = route.get_route_coordinates(route_number)
-        # print("Route", route_number, "coordinates:")
-        # print("Start point:", start_point)
-        # print("End point:", end_point)
-        end_x = end_point[0]
-        end_y = end_point[1]
-        start_x = start_point[0]
-        start_y = start_point[1]
+        start_x, start_y, start_z = start_point
+        end_x, end_y, end_z = end_point
         # 随机初始化小车的静态属性和位置和状态
         all_data = device.generate_vehicle_data()
         fingerpoint = device.get_attribute(all_data, 'fingerprint', 'fingerprint')
@@ -199,7 +189,7 @@ def generate_forklift_data(num_samples, input_dim, per_positive):
                     if j == 0:
                         dataset[i, j, 0] = pos_x
                         dataset[i, j, 1] = pos_y
-                        dataset[i, j, 2] = power
+                        dataset[i, j, 3] = power
                         displacement = 0
                     else:
                         # 假设小车以恒定速度移动
@@ -208,7 +198,7 @@ def generate_forklift_data(num_samples, input_dim, per_positive):
                         # 计算位移距离
                         displacement = ((dataset[i, j, 0] - dataset[i, j-1, 0])**2 + (dataset[i, j, 1] - dataset[i, j-1, 1])**2)**0.5
                         power -= displacement * random.uniform(1, 2) 
-                        dataset[i, j, 2] = power
+                        dataset[i, j, 3] = power
 
             else: # 待料状态：小车到达工厂等待n秒装车后进行运行
                 # 思路：选择一个小车到达工厂的时间去倒推小车之前的位置和电量，顺推小车未来的位置和电量
@@ -221,18 +211,18 @@ def generate_forklift_data(num_samples, input_dim, per_positive):
                         dataset[i, j, 1] = end_y - (stop_time - j) * speed_y
                         displacement = ((dataset[i, stop_time, 0] - dataset[i, j, 0])**2 + (dataset[i, stop_time, 1] - dataset[i, j, 1])**2)**0.5
                         power -= displacement * random.uniform(1, 2)
-                        dataset[i, j, 2] = power 
+                        dataset[i, j, 3] = power 
                     else: 
                         if j > stop_time + waiting_time:
                             dataset[i, j, 0] = dataset[i, j-1, 0] + speed_x
                             dataset[i, j, 1] = dataset[i, j-1, 1] + speed_y
                             displacement = ((dataset[i, stop_time, 0] - dataset[i, j, 0])**2 + (dataset[i, stop_time, 1] - dataset[i, j, 1])**2)**0.5
                             power -= displacement * random.uniform(1, 2)
-                            dataset[i, j, 2] = power
+                            dataset[i, j, 3] = power
                         else:
                             dataset[i, j, 0] = end_x
                             dataset[i, j, 1] = end_y
-                            dataset[i, j, 2] = power
+                            dataset[i, j, 3] = power
                    
         # 负样本，错误状态
         else:
@@ -248,7 +238,7 @@ def generate_forklift_data(num_samples, input_dim, per_positive):
                 for j in range(input_dim):
                     dataset[i, j, 0] = pos_x
                     dataset[i, j, 1] = pos_y
-                    dataset[i, j, 2] = power
+                    dataset[i, j, 3] = power
             
             # 检修状态:小车在路上坏了，停止移动，某个随机时间停到某个地点
             elif status == "maintenance":
@@ -263,12 +253,12 @@ def generate_forklift_data(num_samples, input_dim, per_positive):
                         displacement = ((dataset[i, stop_time, 0] - dataset[i, j, 0])**2 + (dataset[i, stop_time, 1] - dataset[i, j, 1])**2)**0.5
                         # 电量消耗数据，与位移距离成正比
                         power -= displacement * random.uniform(1, 2)         
-                        dataset[i, j, 2] = power
+                        dataset[i, j, 3] = power
                     else:
                         # 小车停止移动，位置和电量不再变化
                         dataset[i, j, 0] = pos_x
                         dataset[i, j, 1] = pos_y
-                        dataset[i, j, 2] = power
+                        dataset[i, j, 3] = power
             
             # 没电状态
             elif status == "depleted":
@@ -293,12 +283,12 @@ def generate_forklift_data(num_samples, input_dim, per_positive):
                         # 小车停止移动，电量为0
                         dataset[i, j, 0] = dataset[i, stop_time, 0]
                         dataset[i, j, 1] = dataset[i, stop_time, 1]
-                        dataset[i, j, 2] = 0
+                        dataset[i, j, 3] = 0
                 power = sum(consume_power)
-                dataset[i, 0, 2] = power # 重新存入初始电量
+                dataset[i, 0, 3] = power # 重新存入初始电量
                 for j in range(stop_time):
                      power -= consume_power[j]
-                     dataset[i,j+1,2] = max(0,power)
+                     dataset[i,j+1,3] = max(0,power)
     
     dataset_ = torch.tensor(dataset, dtype=torch.float32)
     labels_ = torch.tensor(labels, dtype=torch.float32)
@@ -309,7 +299,7 @@ def generate_forklift_data(num_samples, input_dim, per_positive):
 
 def generate_uav_data(num_samples, input_dim, per_positive):
     # 初始化
-    dataset = np.zeros((num_samples, input_dim, 3))
+    dataset = np.zeros((num_samples, input_dim, 4))
     labels = np.zeros((num_samples,5),dtype=int)
     waiting_time = 6 # 待料状态下需要等待6秒
     device_list = []
@@ -368,20 +358,24 @@ def generate_uav_data(num_samples, input_dim, per_positive):
                     if j < stop_time:
                         dataset[i, j, 0] = end_x - (stop_time - j) * speed_x
                         dataset[i, j, 1] = end_y - (stop_time - j) * speed_y
-                        displacement = ((dataset[i, stop_time, 0] - dataset[i, j, 0])**2 + (dataset[i, stop_time, 1] - dataset[i, j, 1])**2)**0.5
-                        power -= displacement * random.uniform(0.05, 0.1)
-                        dataset[i, j, 2] = power 
+                        dataset[i, j, 2] = end_z - (stop_time - j) * speed_z
+                        displacement = ((dataset[i, stop_time, 0] - dataset[i, j, 0])**2 + (dataset[i, stop_time, 1] - dataset[i, j, 1])**2 + (dataset[i, stop_time, 2] - dataset[i ,j, 2]) ** 2)**0.5
+                        power -= displacement * random.uniform(0.05, 0.1) 
+                        dataset[i, j, 3] = power
                     else: 
                         if j > stop_time + waiting_time:
                             dataset[i, j, 0] = dataset[i, j-1, 0] + speed_x
                             dataset[i, j, 1] = dataset[i, j-1, 1] + speed_y
-                            displacement = ((dataset[i, stop_time, 0] - dataset[i, j, 0])**2 + (dataset[i, stop_time, 1] - dataset[i, j, 1])**2)**0.5
-                            power -= displacement * random.uniform(0.05, 0.1)
-                            dataset[i, j, 2] = power
+                            dataset[i, j, 2] = dataset[i, j-1, 2] + speed_z
+                            displacement = ((dataset[i, stop_time, 0] - dataset[i, j, 0])**2 + (dataset[i, stop_time, 1] - dataset[i, j, 1])**2 + (dataset[i, stop_time, 2] - dataset[i ,j, 2]) ** 2)**0.5
+                            power -= displacement * random.uniform(0.05, 0.1) 
+                            dataset[i, j, 3] = power
+
                         else:
                             dataset[i, j, 0] = end_x
                             dataset[i, j, 1] = end_y
-                            dataset[i, j, 2] = power
+                            dataset[i, j, 2] = end_z
+                            dataset[i, j, 3] = power
                    
         # 负样本，错误状态
         else:
@@ -397,7 +391,8 @@ def generate_uav_data(num_samples, input_dim, per_positive):
                 for j in range(input_dim):
                     dataset[i, j, 0] = pos_x
                     dataset[i, j, 1] = pos_y
-                    dataset[i, j, 2] = power
+                    dataset[i, j, 2] = pos_z
+                    dataset[i, j, 3] = power
             
             # 检修状态:小车在路上坏了，停止移动，某个随机时间停到某个地点
             elif status == "maintenance":
@@ -409,15 +404,17 @@ def generate_uav_data(num_samples, input_dim, per_positive):
                     if j < stop_time:
                         dataset[i, j, 0] = pos_x - (stop_time - j) * speed_x
                         dataset[i, j, 1] = pos_y - (stop_time - j) * speed_y
-                        displacement = ((dataset[i, stop_time, 0] - dataset[i, j, 0])**2 + (dataset[i, stop_time, 1] - dataset[i, j, 1])**2)**0.5
+                        dataset[i, j, 2] = pos_z - (stop_time - j) * speed_z
+                        displacement = ((dataset[i, stop_time, 0] - dataset[i, j, 0])**2 + (dataset[i, stop_time, 1] - dataset[i, j, 1])**2 + (dataset[i, stop_time, 2] - dataset[i, j, 2])**2)**0.5
                         # 电量消耗数据，与位移距离成正比
                         power -= displacement * random.uniform(0.05, 0.1)         
-                        dataset[i, j, 2] = power
+                        dataset[i, j, 3] = power
                     else:
                         # 小车停止移动，位置和电量不再变化
                         dataset[i, j, 0] = pos_x
                         dataset[i, j, 1] = pos_y
-                        dataset[i, j, 2] = power
+                        dataset[i ,j, 2] = pos_z
+                        dataset[i, j, 3] = power
             
             # 没电状态
             elif status == "depleted":
@@ -431,27 +428,30 @@ def generate_uav_data(num_samples, input_dim, per_positive):
                         if j == 0:
                             dataset[i, j, 0] = pos_x
                             dataset[i, j, 1] = pos_y
+                            dataset[i, j, 2] = pos_z
                         else:
                             dataset[i, j, 0] = dataset[i, j-1, 0] + speed_x
                             dataset[i, j, 1] = dataset[i, j-1, 1] + speed_y
+                            dataset[i, j, 2] = dataset[i, j-1, 2] + speed_z
                             # 计算位移距离
-                            displacement = ((dataset[i, j, 0] - dataset[i, j-1, 0])**2 + (dataset[i, j, 1] - dataset[i, j-1, 1])**2)**0.5
+                            displacement = ((dataset[i, j, 0] - dataset[i, j-1, 0])**2 + (dataset[i, j, 1] - dataset[i, j-1, 1])**2 + (dataset[i, j, 2] - dataset[i, j-1, 2])**2)**0.5
                             # 存入电量消耗
                             consume_power.append(displacement * random.uniform(0.05, 0.1)) 
                     else:
                         # 小车停止移动，电量为0
                         dataset[i, j, 0] = dataset[i, stop_time, 0]
                         dataset[i, j, 1] = dataset[i, stop_time, 1]
-                        dataset[i, j, 2] = 0
+                        dataset[i, j, 2] = dataset[i, stop_time, 2]
+                        dataset[i, j, 3] = 0
                 power = sum(consume_power)
-                dataset[i, 0, 2] = power # 重新存入初始电量
+                dataset[i, 0, 3] = power # 重新存入初始电量
                 for j in range(stop_time):
                      power -= consume_power[j]
-                     dataset[i,j+1,2] = max(0,power)
+                     dataset[i,j+1,3] = max(0,power)
     
     dataset_ = torch.tensor(dataset, dtype=torch.float32)
     labels_ = torch.tensor(labels, dtype=torch.float32)
-    print("...generate_car_data run Finished...")
+    print("...generate_uav_data run Finished...")
     return dataset_, labels_, device_list
 
 

@@ -14,7 +14,7 @@ if __name__ == "__main__":
     NEW_DATA = 0
     train_epochs = 500
 
-    lstm, train_x, train_y, device_train_list = run.initialize_model_data(3, input_dim, per_positive, NEW_DATA)
+    lstm, train_x, train_y, device_train_list = run.initialize_model_data(4, input_dim, per_positive, NEW_DATA)
     test_x, test_y, device_test_list = run.initialize_test_data(input_dim, per_positive, NEW_DATA) 
 
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     device = run.DeviceAuthentication(device_id, manufacturer)# 实例化设备验证类
     
 
-    test_loss, test_acc, pred_labels = run.test_model(lstm, test_x, test_y)
+    test_loss, test_acc, pred_labels,  pred_y_clas, pred_labels = run.test_model(lstm, test_x, test_y)
     print("...Test Finished...") 
     print("test_acc=",test_acc)
     print("test_loss=",test_loss)
