@@ -28,7 +28,7 @@ def send_data(conn, data):
     data_bytes = pickle.dumps(data)  # 序列化数据
     data_len = len(data_bytes)  # 数据长度
     conn.sendall(data_len.to_bytes(8, 'big'))  # 先发送8字节的数据长度
-    conn.sendall(data_bytes)  # 发送实际数据
+    conn.sendall(data_bytes)  # 发送实际数据 
 
 def recv_data(conn):
     """通过socket接收数据，先接收数据长度再接收数据"""

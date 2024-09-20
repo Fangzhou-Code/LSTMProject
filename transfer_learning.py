@@ -64,7 +64,7 @@ def main():
     forklift_finetune_y = torch.load('Dataset/finetunelabels.pt')
     forklift_finetune_x, forklift_finetune_y = forklift_finetune_x.to(device), forklift_finetune_y.to(device)
 
-    # 智能叉车模型训练
+    # 智能叉车模型重新训练
     start_time = time.time()
     forklift_lstm, train_loss_pos_list, train_accuracy_list, train_loss_list, train_epoch_list = run.train_model(
         lstm, forklist_train_x, forklift_train_y, TRAIN_EPOCHS)
