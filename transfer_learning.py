@@ -83,8 +83,8 @@ def main():
     uav_train_x = torch.load(uav_traindataset_pth)
     uav_train_y = torch.load(uav_trainlabels_pth)
     uav_train_x, uav_train_y = uav_train_x.to(device), uav_train_y.to(device)
-    uav_test_x = torch.load(forklift_testdataset_pth)
-    uav_test_y =  torch.load(forklift_testlabels_pth)
+    uav_test_x = torch.load(uav_testdataset_pth)
+    uav_test_y =  torch.load(uav_testlabels_pth)
     uav_test_x, uav_test_y = uav_test_x.to(device), uav_test_y.to(device)
     uav_finetune_x = torch.load(uav_finetunedataset_pth)
     uav_finetune_y = torch.load(uav_finetunelabels_pth)
@@ -111,7 +111,7 @@ def main():
     # 无人机重新训练
     start_time = time.time()
     uav_lstm, _, _, _, _ = run.train_model(
-        lstm, uav_train_x, uav_train_y, TRAIN_EPOCHS * 10)
+        lstm, uav_train_x, uav_train_y, TRAIN_EPOCHS)
     end_time = time.time()
     test_loss_uav1, test_acc_uav1, _, _, _ = run.test_model(uav_lstm, uav_test_x, uav_test_y)
     train_time_uav = end_time-start_time
@@ -120,7 +120,7 @@ def main():
     # 无人机微调
     start_time = time.time()
     uav_finetune_lstm, _, _, _, _ = run.train_model(
-        car_lstm, uav_finetune_x, uav_finetune_y, SFT_EPOCHS * 10)
+        car_lstm, uav_finetune_x, uav_finetune_y, SFT_EPOCHS)
     end_time = time.time()
     test_loss_uav3, test_acc_uav3, _, _, _ = run.test_model(uav_finetune_lstm, uav_test_x, uav_test_y)
     finetune_time_uav = end_time-start_time
