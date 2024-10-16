@@ -1,11 +1,6 @@
-import time
-import pickle
-import torch
-import socket
-from multiprocessing import Process, Queue
+import time, torch, run, json
 from Dataset import generate_car_data, generate_forklift_data, generate_uav_data
 from Model import LSTM
-import run
 
 # 定义全局参数
 INPUT_DIM = 10
@@ -25,6 +20,7 @@ forklift_traindataset_pth = 'Dataset/transferlearning_forklift_traindataset.pt'
 forklift_trainlabels_pth =  'Dataset/transferlearning_forklift_trainlabels.pt'
 forklift_testdataset_pth = 'Dataset/transferlearning_forklift_testdataset.pt'
 forklift_testlabels_pth =  'Dataset/transferlearning_forklift_testlabels.pt'
+forklift_devicefinger_pth = 'Dataset/forklift_devicefinger_list.json'
 forklift_finetunedataset_pth =  'Dataset/transferlearning_forklift_finetunedataset.pt'
 forklift_finetunelabels_pth =  'Dataset/transferlearning_forklift_finetunelabels.pt'
 
@@ -32,6 +28,7 @@ uav_traindataset_pth = 'Dataset/transferlearning_uav_traindataset.pt'
 uav_trainlabels_pth = 'Dataset/transferlearning_uav_trainlabels.pt'
 uav_testdataset_pth = 'Dataset/transferlearning_uav_testdataset.pt'
 uav_testlabels_pth = 'Dataset/transferlearning_uav_testlabels.pt'
+uav_devicefinger_pth = 'Dataset/uav_devicefinger_list.json'
 uav_finetunedataset_pth = 'Dataset/transferlearning_uav_finetunedataset.pt'
 uav_finetunelabels_pth = 'Dataset/transferlearning_uav_finetunelabels.pt'
 
@@ -40,9 +37,11 @@ def download_data(NUM_SAMPLES_TRAIN, NUM_SAMPLES_TEST, NUM_SAMPLES_FINETUNE, INP
     forklist_train_x, forklift_train_y, _ = generate_forklift_data(num_samples=NUM_SAMPLES_TRAIN, input_dim=INPUT_DIM, per_positive=PER_POSITIVE)
     torch.save(forklist_train_x, forklift_traindataset_pth)
     torch.save(forklift_train_y, forklift_trainlabels_pth)
-    forklift_test_x, forklift_test_y, _ = generate_forklift_data(num_samples=NUM_SAMPLES_TEST, input_dim=INPUT_DIM, per_positive=PER_POSITIVE)
+    forklift_test_x, forklift_test_y, forklift_devicefinger_list = generate_forklift_data(num_samples=NUM_SAMPLES_TEST, input_dim=INPUT_DIM, per_positive=PER_POSITIVE)
     torch.save(forklift_test_x, forklift_testdataset_pth)
     torch.save(forklift_test_y, forklift_testlabels_pth)
+    with open(forklift_devicefinger_pth, 'w') as json_file:
+        json.dump(forklift_devicefinger_list, json_file)
     forklift_finetune_x, forklift_finetune_y, _ = generate_forklift_data(num_samples=NUM_SAMPLES_FINETUNE, input_dim=INPUT_DIM, per_positive=PER_POSITIVE)
     torch.save(forklift_finetune_x, forklift_finetunedataset_pth)
     torch.save(forklift_finetune_y, forklift_finetunelabels_pth)
@@ -50,9 +49,11 @@ def download_data(NUM_SAMPLES_TRAIN, NUM_SAMPLES_TEST, NUM_SAMPLES_FINETUNE, INP
     uav_train_x, uav_train_y, _ = generate_uav_data(num_samples=NUM_SAMPLES_TRAIN, input_dim=INPUT_DIM, per_positive=PER_POSITIVE)
     torch.save(uav_train_x, uav_traindataset_pth)
     torch.save(uav_train_y, uav_trainlabels_pth)
-    uav_test_x, uav_test_y, _ = generate_uav_data(num_samples=NUM_SAMPLES_TEST, input_dim=INPUT_DIM, per_positive=PER_POSITIVE)
+    uav_test_x, uav_test_y, uav_devicefinger_list = generate_uav_data(num_samples=NUM_SAMPLES_TEST, input_dim=INPUT_DIM, per_positive=PER_POSITIVE)
     torch.save(uav_test_x, uav_testdataset_pth)
     torch.save(uav_test_y, uav_testlabels_pth)
+    with open(uav_devicefinger_pth, 'w') as json_file:
+        json.dump(uav_devicefinger_list, json_file)
     uav_finetune_x,  uav_finetune_y, _ = generate_uav_data(num_samples=NUM_SAMPLES_FINETUNE, input_dim=INPUT_DIM, per_positive=PER_POSITIVE)                                              
     torch.save(uav_finetune_x, uav_finetunedataset_pth)
     torch.save(uav_finetune_y, uav_finetunelabels_pth)
@@ -90,6 +91,19 @@ def main():
     uav_finetune_y = torch.load(uav_finetunelabels_pth)
     uav_finetune_x, uav_finetune_y = uav_finetune_x.to(device), uav_finetune_y.to(device) 
 
+    # 设备指纹
+    ratio = 0.5
+    # 从 JSON 文件中读取
+    total_device_test_list = []
+    with open(forklift_devicefinger_pth, 'r') as json_file:
+        forklift_devicefinger_list = json.load(json_file)
+    total_device_test_list += forklift_devicefinger_list
+    with open(uav_devicefinger_pth, 'r') as json_file:
+        uav_devicefinger_list = json.load(json_file)
+    total_device_test_list += uav_devicefinger_list
+    ft_acc = sum(1 for k in total_device_test_list if k == "none") / len(total_device_test_list) + (1 - ratio)
+
+
     # 智能叉车模型重新训练
     start_time = time.time()
     forklift_lstm, _, _, _, _ = run.train_model(
@@ -126,6 +140,7 @@ def main():
     finetune_time_uav = end_time-start_time
     
     # 打印
+    print(f"设备指纹, 准确率: {ft_acc}")
     print(f"叉车模型重新训练完成, 准确率: {test_acc_forklift1}, 损失值：{test_loss_forklift1}, 训练时间：{train_time_forklift}")
     print(f"小车模型直接用于叉车, 准确率: {test_acc_forklift2}, 损失值：{test_loss_forklift2}")
     print(f"叉车模型微调完成, 准确率: {test_acc_forklift3}, 损失值：{test_loss_forklift3}, 训练时间：{finetune_time_forklift}")

@@ -144,7 +144,6 @@ def generate_car_data(num_samples, input_dim, num_negative, route_number):
 
 
 
-
 def main():
     # 初始化
     input_dim = 20
