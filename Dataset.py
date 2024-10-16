@@ -9,13 +9,16 @@ import pickle
 
 
 
-def generate_car_data(num_samples, input_dim, per_positive):
+def generate_car_data(num_samples, input_dim, per_positive, per_control = 0.5):
+    '''
+    per_positive # 正样本占全部样本的比例
+    per_control # 控制数量占全部负样本的比例
+    '''
     # 初始化
     dataset = np.zeros((num_samples, input_dim, 4))
     labels = np.zeros((num_samples,5),dtype=int)
     waiting_time = 6 # 待料状态下需要等待6秒
     device_list = []
-    per_control = 0.5 # 控制数量占全部负样本的比例
     print("开始生成样本")
     for i in range(num_samples):
         print(f"生成样本 {i + 1}/{num_samples}")
@@ -152,13 +155,17 @@ def generate_car_data(num_samples, input_dim, per_positive):
     return dataset_, labels_, device_list
 
 
-def generate_forklift_data(num_samples, input_dim, per_positive):
+def generate_forklift_data(num_samples, input_dim, per_positive, per_control = 0.5):
+    '''
+    per_positive # 正样本占全部样本的比例
+    per_control # 控制数量占全部负样本的比例
+    '''
     # 初始化
     dataset = np.zeros((num_samples, input_dim, 4))
     labels = np.zeros((num_samples,5),dtype=int)
     waiting_time = 6 # 待料状态下需要等待6秒
     device_list = []
-    per_control = 0.5 # 控制数量占全部负样本的比例
+     
     print("开始生成样本")
     for i in range(num_samples):
         print(f"生成样本 {i + 1}/{num_samples}")
@@ -297,13 +304,16 @@ def generate_forklift_data(num_samples, input_dim, per_positive):
 
 
 
-def generate_uav_data(num_samples, input_dim, per_positive):
+def generate_uav_data(num_samples, input_dim, per_positive, per_control = 0.5):
+    '''
+    per_positive # 正样本占全部样本的比例
+    per_control # 控制数量占全部负样本的比例
+    '''
     # 初始化
     dataset = np.zeros((num_samples, input_dim, 4))
     labels = np.zeros((num_samples,5),dtype=int)
     waiting_time = 6 # 待料状态下需要等待6秒
     device_list = []
-    per_control = 0.5 # 控制数量占全部负样本的比例
     print("开始生成样本")
     for i in range(num_samples):
         print(f"生成样本 {i + 1}/{num_samples}")
