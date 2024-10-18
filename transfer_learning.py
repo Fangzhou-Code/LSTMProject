@@ -15,7 +15,7 @@ NUM_LAYERS = 3
 PRED_OUTPUT_SIZE = INPUT_SIZE
 CLAS_OUTPUT_SIZE = 5
 PER_POSITIVE = 0.6
-PER_CONTROL = 0.5
+PER_CONTROL = 1
 TEST_NUM = 10
 
 # 无人车数据集
@@ -171,7 +171,7 @@ def main():
         with open(uav_testdevicefinger_pth, 'r') as json_file:
             uav_devicefinger_list = json.load(json_file)
         total_device_test_list += uav_devicefinger_list
-    ft_acc = sum(1 for k in total_device_test_list if k == "none") / len(total_device_test_list) + (1 - PER_POSITIVE)
+    ft_acc = sum(1 for k in total_device_test_list if k == "none") / len(total_device_test_list) + PER_POSITIVE
 
     # 训练无人车
     lstm = LSTM(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, PRED_OUTPUT_SIZE, CLAS_OUTPUT_SIZE)
@@ -235,5 +235,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # download_data(NUM_SAMPLES_TRAIN, NUM_SAMPLES_TEST, NUM_SAMPLES_FINETUNE, INPUT_DIM, PER_POSITIVE, TEST_NUM)
+    download_data(NUM_SAMPLES_TRAIN, NUM_SAMPLES_TEST, NUM_SAMPLES_FINETUNE, INPUT_DIM, PER_POSITIVE, TEST_NUM)
     main()
