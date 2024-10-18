@@ -14,7 +14,7 @@ HIDDEN_SIZE = 64
 NUM_LAYERS = 3
 PRED_OUTPUT_SIZE = INPUT_SIZE
 CLAS_OUTPUT_SIZE = 5
-PER_POSITIVE = 0.6
+PER_POSITIVE = 0.2
 PER_CONTROL = 1
 TEST_NUM = 10
 
@@ -155,6 +155,7 @@ def main():
 
     # 设备指纹
     # 从 JSON 文件中读取
+    start_time = time.time()
     total_device_test_list = []
     for i in range(TEST_NUM):
         car_testdevicefinger_pth = f'Dataset/car_devicefinger_list{i}.json'
@@ -172,6 +173,8 @@ def main():
             uav_devicefinger_list = json.load(json_file)
         total_device_test_list += uav_devicefinger_list
     ft_acc = sum(1 for k in total_device_test_list if k == "none") / len(total_device_test_list) + PER_POSITIVE
+    end_time = time.time()
+    devicefinger_time = end_time - start_time
 
     # 训练无人车
     lstm = LSTM(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, PRED_OUTPUT_SIZE, CLAS_OUTPUT_SIZE)
@@ -224,7 +227,7 @@ def main():
     test_loss_uav3, test_acc_uav3 = compute_avg_loss_acc(uav_finetune_lstm, uav_test_x_list, uav_test_y_list)
     
     # 打印
-    print(f"设备指纹, 准确率: {ft_acc}")
+    print(f"设备指纹, 准确率: {ft_acc}, 测试时间：{devicefinger_time}")
     print(f"无人车模型训练完成, 准确率: {test_acc_car}, 损失值：{test_loss_car}, 训练时间：{train_time_car}")
     print(f"叉车模型重新训练完成, 准确率: {test_acc_forklift1}, 损失值：{test_loss_forklift1}, 训练时间：{train_time_forklift}")
     print(f"小车模型直接用于叉车, 准确率: {test_acc_forklift2}, 损失值：{test_loss_forklift2}")
