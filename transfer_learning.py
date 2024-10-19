@@ -2,6 +2,11 @@ import time, torch, run, json
 from Dataset import generate_forklift_data, generate_uav_data, generate_car_data
 from Model import LSTM
 
+'''
+对设备指纹，agv小车，智能叉车和无人机进行训练，迁移学习
+'''
+
+
 # 定义全局参数
 INPUT_DIM = 10
 TRAIN_EPOCHS = 1500
@@ -238,5 +243,5 @@ def main():
 
 
 if __name__ == "__main__":
-    download_data(NUM_SAMPLES_TRAIN, NUM_SAMPLES_TEST, NUM_SAMPLES_FINETUNE, INPUT_DIM, PER_POSITIVE, TEST_NUM)
+    # download_data(NUM_SAMPLES_TRAIN, NUM_SAMPLES_TEST, NUM_SAMPLES_FINETUNE, INPUT_DIM, PER_POSITIVE, TEST_NUM)
     main()
