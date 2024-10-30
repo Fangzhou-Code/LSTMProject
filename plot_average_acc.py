@@ -2,11 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Data
-per_control = [0.2, 0.4, 0.6, 0.8, 1.0]
-device_fingerprint_acc = [0.8422, 0.6816666666666666, 0.5195333333333334, 0.3626, 0.2]
-lstm_acc = [0.5892000466585159, 0.5790000408887863, 0.561800017952919, 0.539500042796135, 0.550900012254715]
-lstm_transfer_acc = [0.8487000155448914, 0.8595000696182251, 0.8402000045776367, 0.8577000463008881, 0.8561000096797943]
-retrain_acc = [0.888800014257431, 0.8837000620365143, 0.8827000045776367, 0.8835000383853912, 0.8860000455379486]
+per_control = [0.3, 0.5, 0.6, 0.8]
+device_fingerprint_acc = [0.7574000000000001, 0.6036666666666667, 0.5195333333333334 ,0.3626]
+lstm_acc = [0.6243000775575638, 0.561800017952919, 0.555000051856041,   0.539500042796135]
+lstm_transfer_acc = [0.8165000879764557, 0.8274001181125641, 0.8402000045776367, 0.8577000463008881]
+retrain_acc = [0.8643001019954681, 0.8706000745296478, 0.8827000045776367, 0.8835000383853912]
 
 bar_width = 0.2
 index = np.arange(len(per_control))
@@ -16,19 +16,19 @@ fig, ax = plt.subplots()
 plt.ylim(0,1)
 
 # Nature style colors (simple, toned down, soft palette)
-colors = ['#2E91E5', '#E15F99', '#1CA71C', '#FB0D0D']
+colors = ['#8EA0C9',  '#E889BD', '#FC8C63', '#67C2A3']
 
 # Plot each set of bars
 # Plot each set of bars with the correct order and swapped colors for 'Retrain' and 'Device Fingerprint'
-ax.bar(index, device_fingerprint_acc, bar_width, label='Device Fingerprint', color=colors[3])
-ax.bar(index + bar_width, lstm_acc, bar_width, label='LSTM', color=colors[1])
-ax.bar(index + 2 * bar_width, lstm_transfer_acc, bar_width, label='LSTM + Transfer Learning', color=colors[2])
-ax.bar(index + 3 * bar_width, retrain_acc, bar_width, label='Retrain', color=colors[0])
+ax.bar(index, device_fingerprint_acc, bar_width, label='Device Fingerprint', color=colors[0])
+ax.bar(index + bar_width, lstm_acc, bar_width, label='LSTM', color=colors[2])
+ax.bar(index + 2 * bar_width, lstm_transfer_acc, bar_width, label='Transfer Learning Based', color=colors[3])
+ax.bar(index + 3 * bar_width, retrain_acc, bar_width, label='Retraining', color=colors[1])
 
 # Labels and formatting
-ax.set_xlabel('Percentage Control')
+
 ax.set_ylabel('Accuracy')
-ax.set_title('Accuracy Comparison')  # Updated title
+ax.set_title('Average Accuracy Comparison')  # Updated title
 
 ax.set_xticks(index + 1.5 * bar_width)
 ax.set_xticklabels(per_control)

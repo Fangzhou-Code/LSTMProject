@@ -12,16 +12,16 @@ index = range(len(num_forklift))
 fig, ax = plt.subplots()
 
 # Nature style colors (simple, toned down, soft palette)
-colors_nature = ['#2E91E5', '#E15F99']
+colors_nature = ['#E889BD', '#67C2A3']
 
 # Plotting the bars for training and fine-tuning times with Nature-inspired colors
-ax.bar(index, train_time, bar_width, label='Training Time', color=colors_nature[0])
-ax.bar([i + bar_width for i in index], fine_tune_time, bar_width, label='Fine-Tuning Time', color=colors_nature[1])
+ax.bar(index, train_time, bar_width, label='Retraining Time', color=colors_nature[0])
+ax.bar([i + bar_width for i in index], fine_tune_time, bar_width, label='Trasnfer Learning Based', color=colors_nature[1])
 
 # Labels and formatting
 ax.set_xlabel('Number of Forklifts')
 ax.set_ylabel('Time (seconds)')
-ax.set_title('Training and Fine-Tuning Time Comparison')
+ax.set_title('Training and Transfer Learning Time Comparison')
 ax.set_xticks([i + bar_width / 2 for i in index])
 ax.set_xticklabels(num_forklift)
 
