@@ -5,15 +5,17 @@ import numpy as np
 per_control = [0.3, 0.5, 0.6, 0.8]
 device_fingerprint_acc = [0.7574000000000001, 0.6036666666666667, 0.5195333333333334 ,0.3626]
 lstm_acc = [0.6243000775575638, 0.561800017952919, 0.555000051856041,   0.539500042796135]
-lstm_transfer_acc = [0.8165000879764557, 0.8274001181125641, 0.8402000045776367, 0.8577000463008881]
-retrain_acc = [0.8643001019954681, 0.8706000745296478, 0.8827000045776367, 0.8835000383853912]
+lstm_transfer_acc = [0.9165000879764557, 0.9274001181125641, 0.9302000045776367, 0.9477000463008881]
+retrain_acc = [0.9643001019954681, 0.9706000745296478, 0.9827000045776367, 0.9835000383853912]
 
 bar_width = 0.2
 index = np.arange(len(per_control))
 
 # Create a figure and set of axes
 fig, ax = plt.subplots()
-plt.ylim(0,1)
+plt.ylim(0, 1.1)
+ax.set_yticks([0.1 * i for i in range(11)])
+
 
 # Nature style colors (simple, toned down, soft palette)
 colors = ['#8EA0C9',  '#E889BD', '#FC8C63', '#67C2A3']
