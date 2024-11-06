@@ -244,13 +244,13 @@ def authenticate_device(lstm, test_samples_list): #[1x4] 1000 0100 0010 0001
 if __name__ == "__main__":
 
     # 模型训练(如果已经有训练好的模型可以注释这一段，后面直接加载训练好的模型即可)
-    train_samples_list = generate_samples_list(10000,5000)
-    lstm = train_model(train_samples_list)
-    torch.save(lstm, './package/model_and_data/trainedmodel.pt')
-    print("...Training Finished...")
+    # train_samples_list = generate_samples_list(10000,5000)
+    # lstm = train_model(train_samples_list)
+    # torch.save(lstm, './package/model_and_data/trainedmodel.pt')
+    # print("...Training Finished...")
 
     # 生成测试样本：0和1组成的数组
-    test_samples_list = generate_samples_list(10, 5)
+    test_samples_list = generate_samples_list(500, 100)
     # 加载训练好的模型
     lstm = torch.load('./package/model_and_data/trainedmodel.pt')  
     device_type = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
@@ -261,7 +261,7 @@ if __name__ == "__main__":
     print(f"原始输入：{test_samples_list}")
     print(f"预测输出：{pred_list}")
     correct = 0
-    for i in range(pred_list):
+    for i in range(len(pred_list)):
         if test_samples_list[i] == pred_list[i]:
             correct += 1
     print(f"准确率：{correct / len(pred_list)}")
