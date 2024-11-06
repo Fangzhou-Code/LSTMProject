@@ -164,7 +164,7 @@ def generate_samples_list(num_zeros, num_ones):
 def train_model(train_samples_list):
     # 初始化
     lstm = LSTM(input_size=4, hidden_size=64, num_layers=3, pred_output_size=4, clas_output_size=5)
-    max_epochs = 10000
+    max_epochs = 15000
     optimizer = optim.Adam(lstm.parameters(), lr=1e-2, weight_decay=1e-5)
 
     # train_x, train_y, _ = generate_car_data(train_samples_list)
@@ -260,3 +260,8 @@ if __name__ == "__main__":
     pred_list = authenticate_device(lstm, test_samples_list)
     print(f"原始输入：{test_samples_list}")
     print(f"预测输出：{pred_list}")
+    correct = 0
+    for i in range(pred_list):
+        if test_samples_list[i] == pred_list[i]:
+            correct += 1
+    print(f"准确率：{correct / len(pred_list)}")
