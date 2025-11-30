@@ -250,7 +250,8 @@ if __name__ == "__main__":
     # print("...Training Finished...")
 
     # 生成测试样本：0和1组成的数组
-    test_samples_list = generate_samples_list(500, 100)
+    # test_samples_list = generate_samples_list(500, 100)
+    test_samples_list = [1]
     # 加载训练好的模型
     lstm = torch.load('./package/model_and_data/trainedmodel.pt')  
     device_type = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
