@@ -1,251 +1,238 @@
+# LSTMProject
 
-# 1. 定义行为模式
+[![Python](https://img.shields.io/badge/Python-3.x-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![Deep Learning](https://img.shields.io/badge/Model-LSTM-2F855A?style=flat)](#)
+[![Research](https://img.shields.io/badge/Research-Device%20Authentication-B31B1B?style=flat)](#)
 
-正常的小车的行为模式和错误小车的行为模式；
+## Overview
 
-思路：我们将模型的输出分为两类——预测值和分类概率分布，两者同时决定设备身份验证结果
+**English.** LSTMProject is a research-oriented Python project for sequence-model-based device behavior modeling and identity authentication. It uses LSTM networks to learn mobility and power-consumption patterns from simulated autonomous devices, including ground vehicles, forklifts, and UAVs. The system combines trajectory prediction and state classification to distinguish legitimate devices from abnormal or spoofed devices.
 
-预测值：我们每隔k时刻取${t_{1},t_{2},t_{3},...,t_{n}}$时刻的小车数据时空位置和电量。我们用$t_{1},t_{2},t_{3},...,t_{n-1}$时刻的数据进行训练，预测第$t_{n}$时刻的数据
+The repository is structured as an end-to-end experimental prototype: synthetic data generation, device fingerprint construction, LSTM training/testing, transfer learning across device types, cloud-edge-device collaborative validation, and result visualization. It is designed for researchers and engineers who need a controllable environment for studying intelligent device authentication under dynamic cyber-physical behavior.
 
-分类概率：我们将五种状态进行one-hot编码：
+**中文。** LSTMProject 是一个面向研究的 Python 项目，用于基于序列模型的设备行为建模与身份认证。项目使用 LSTM 网络学习无人车、智能叉车和无人机等设备的运动轨迹与电量消耗模式，并结合轨迹预测和状态分类来区分真实设备、异常设备和伪造设备。
 
-* 运行 10000
-* 待料 01000
-* 封存 00100
-* 检修 00010
-* 没电 00001 
-  
-要求:
+本仓库覆盖完整实验链路：合成数据生成、设备指纹构造、LSTM 训练与测试、跨设备类型迁移学习、云-边-端协同验证，以及结果可视化。它适合用于研究动态物理行为驱动的智能设备认证、异常状态识别和云边协同安全验证。
 
-正样本状态是运行状态和待料状态(等待6秒)
+## Core Idea
 
-负样本产生三种错误状态: 封存 、检修 、没电三种错误状态.同时三种错误状态对应不同的错误数据，封存状态数据是不同时刻位置状态和初始状态相同，检修状态是位移到某个随即时刻后不再移动，有电量，没电状态是某个时刻后不再移动，电量为0.
+**English.** The authentication logic uses two complementary signals:
 
-# 2. 生成数据用于迁移学习 
+1. **Prediction consistency**: historical device states are used to predict the next state, including spatial position and power level.
+2. **State classification**: device behavior is classified into operational states with one-hot labels.
 
-**2.1. [Dataset.py](Dataset.py)**
+A device is considered more trustworthy when its predicted trajectory, power evolution, state label, and device fingerprint are mutually consistent.
 
-由于无人机数据新增z轴坐标，因此我们生成的数据应该是四个维度：`X, Y, Z, Power`，为此我们需要将生成数据的函数进行重写：
-```
-generate_car_data: 新增z轴始终为0
-generate_forklift_data: 新增z轴始终为0
-generate_uav_data：新增z轴不为0
-```
+**中文。** 项目的认证逻辑由两个互补信号共同决定：
 
-同时[Model](Model.py) 也需要改变输入`input_size=4`
+1. **预测一致性**：利用历史设备状态预测下一时刻的位置与电量。
+2. **状态分类**：将设备行为映射到 one-hot 编码的运行状态。
 
-**2.2 [route.py](route.py)**
+当设备的轨迹预测、电量变化、状态标签和设备指纹彼此一致时，该设备更可能是真实可信设备。
 
-同时为了叉车和无人机的数据，我们为其设计了新的路线:
+## Behavior States
 
-* 无人车的路线代号1-3: ![无人车路线](results/car_route.png)
-* 智能叉车路线代号4-8: ![智能叉车路线](results/forklift_route.png)
-* 无人机的路线代号9-12: ![无人机路线](results/uav_route.png)
+The project models five device states:
 
-# 3. 代码介绍
+| State | 中文状态 | One-hot Label | Description |
+| --- | --- | --- | --- |
+| Running | 运行 | `10000` | Device moves according to its planned route. |
+| Waiting | 待料 | `01000` | Device pauses temporarily and resumes operation later. |
+| Stored | 封存 | `00100` | Device remains fixed at its initial state. |
+| Maintenance | 检修 | `00010` | Device stops after moving to an intermediate position. |
+| Out of Power | 没电 | `00001` | Device stops after battery depletion. |
 
-## 3.1 [Dataset.py](Dataset.py)
+**Positive samples / 正样本:** running and waiting states.
 
-本文档解释了如何生成不同类型车辆（如小车、叉车、无人机）的模拟数据，并展示它们在不同状态下的操作情况。代码能够生成用于训练和测试的数据集，并输出不同状态的样本。
+**Negative samples / 负样本:** stored, maintenance, and out-of-power states.
 
+## What Is Implemented
 
-### 3.1.1. `generate_car_data()`
+**English.**
 
-该函数生成小车的模拟数据，包括“运行”、“待料”、“封存”、“检修”和“没电”等多种操作状态。每辆车的轨迹基于随机选择的路线进行计算，具体步骤如下：
+- Synthetic behavior generation for cars, forklifts, and UAVs.
+- Four-dimensional dynamic input: `X`, `Y`, `Z`, and `Power`.
+- LSTM-based trajectory and power prediction.
+- Device-state classification with one-hot labels.
+- Static and dynamic device attributes for device fingerprinting.
+- RSA key-pair generation associated with device identity.
+- Transfer learning from car behavior models to forklift and UAV scenarios.
+- Cloud-edge-device socket workflow for collaborative model validation.
+- Visualization scripts for routes, timing, accuracy, and transfer-learning results.
 
-1. **数据初始化**：为每辆小车初始化位置、速度、状态和电量等参数。
-2. **状态生成**：
-   - 正样本（运行或待料状态）：
-     - **运行状态**：小车根据恒定速度移动，电量随位移消耗逐渐减少。
-     - **待料状态**：小车在随机时间段内停止移动，等待装车后继续行驶。
-   - 负样本（封存、检修、没电状态）：
-     - **封存状态**：小车停止移动，电量保持不变。
-     - **检修状态**：小车在某一随机时刻停止运行，并保持在停止位置。
-     - **没电状态**：小车在电量耗尽时停止运行，电量逐渐归零。
+**中文。**
 
-3. **返回结果**：函数返回包含车辆位置、电量等信息的数据集，以及车辆设备指纹等信息。
+- 支持无人车、智能叉车、无人机的合成行为数据生成。
+- 使用四维动态输入：`X`、`Y`、`Z`、`Power`。
+- 基于 LSTM 的轨迹与电量预测。
+- 基于 one-hot 标签的设备状态分类。
+- 结合静态属性与动态属性生成设备指纹。
+- 与设备身份关联的 RSA 公私钥生成。
+- 支持从无人车模型迁移到叉车和无人机任务。
+- 支持云-边-端 socket 协同验证流程。
+- 提供路线、时间、准确率和迁移学习结果的可视化脚本。
 
-### 3.1.2. `generate_forklift_data()` 和 `generate_uav_data()`
+## Repository Structure
 
-与 `generate_car_data()` 类似，`generate_forklift_data()` 和 `generate_uav_data()` 分别用于生成叉车和无人机的模拟数据，流程基本相同，但路线和速度的计算有所不同。
-
-## 3.2 [device.py](device.py)
-
-本项目的主要目标是生成包含静态和动态信息的无人车数据，并基于设备指纹生成公私钥对。以下是项目的详细介绍：
-
-主要功能
-
-* 生成设备指纹
-* 生成RSA密钥对
-* 生成无人车数据
-* 获取特定属性
-* 修改特定属性
-
-属性分类：
-
-静态属性、动态属性、设备指纹、公私钥
-
-* 静态属性：
-  
-| 属性名            | 类型   | 描述                          |
-| ----------------- | ------ | ----------------------------- |
-| `id`              | 字符串 | 唯一标识符，由UUID生成         |
-| `name`            | 字符串 | 无人车的名称                   |
-| `manufacturer`    | 字符串 | 制造商名称                     |
-| `device_type`     | 字符串 | 设备类型，例如：`car`          |
-| `warranty_period` | 整数   | 保修期，以月为单位             |
-| `os`              | 字符串 | 操作系统                       |
-| `os_version`      | 字符串 | 操作系统版本                   |
-| `machine`         | 字符串 | 机器类型（硬件信息）           |
-| `processor`       | 字符串 | 处理器信息                     |
-| `hostname`        | 字符串 | 主机名                         |
-| `ip_address`      | 字符串 | IP 地址                        |
-| `mac_address`     | 字符串 | MAC 地址                       |
-
-示例：
-
-```python
-{
-    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-    "name": "car_123",
-    "manufacturer": "manufacturer_456",
-    "device_type": "car",
-    "warranty_period": 12,
-    "os": "Linux",
-    "os_version": "5.4.0-74-generic",
-    "machine": "x86_64",
-    "processor": "Intel(R) Core(TM) i7-8650U CPU @ 1.90GHz",
-    "hostname": "car-hostname",
-    "ip_address": "192.168.1.10",
-    "mac_address": "00:1A:2B:3C:4D:5E"
-}
+```text
+Dataset.py                         # Synthetic data generation for cars, forklifts, and UAVs
+Model.py                           # LSTM model definition
+route.py                           # Route design and route visualization
+run.py                             # Main execution entry for selected workflows
+train_test_model.py                # LSTM training and testing on vehicle data
+transfer_learning.py               # Transfer learning across device types
+transfer_learning_car.py           # Car-specific transfer-learning workflow
+transferlearning_time_forklift.py  # Forklift timing experiment
+cloud_edge_client.py               # Cloud-edge-device collaborative socket workflow
+device.py                          # Device attributes, fingerprints, and RSA key pairs
+devicefinger_test.py               # Device fingerprint verification experiments
+plot_average_acc.py                # Accuracy visualization
+plot_time.py                       # Timing visualization
+plot_transferlearning.py           # Transfer-learning visualization
+Dataset/                           # Generated or stored datasets
+Model/                             # Saved model artifacts
+results/                           # Route figures and experiment outputs
+package/                           # Packaged prediction/classification interface
+key_pair/                          # Generated key material
 ```
 
-* 动态属性
-  
-| 属性名       | 类型             | 描述                          |
-| ------------ | ---------------- | ----------------------------- |
-| `position`   | 元组 (浮点数, 浮点数) | 无人车的当前位置               |
-| `speed`      | 浮点数           | 无人车的速度                   |
-| `power`      | 整数             | 无人车的电量                   |
-| `route`      | 整数             | 无人车当前的路线编号           |
-| `permissions`| 列表（字符串）   | 无人车的权限，例如：`['admin', 'operator']` |
-| `frequence`  | 整数             | 无人车数据更新的频率，以秒为单位 |
+## Data Generation
 
-示例：
+**English.** `Dataset.py` generates controlled behavior traces for three device classes:
 
-```python
-{
-    "position": [52.3765, 4.8945],
-    "speed": 8.5,
-    "power": 85,
-    "route": 2,
-    "permissions": ["admin", "viewer"],
-    "frequence": 10
-}
-```
+- **Car / 无人车**: ground movement with `Z = 0`.
+- **Forklift / 智能叉车**: ground logistics movement with `Z = 0`.
+- **UAV / 无人机**: aerial movement with non-zero `Z` dynamics.
 
-全部属性完整示例：
+Each sample contains position, power, behavior state, and device-related information. The default modeling input is four-dimensional: `X`, `Y`, `Z`, and `Power`.
 
-```python
-{
-    "static_info": {
-        "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-        "name": "car_123",
-        "manufacturer": "manufacturer_456",
-        "device_type": "car",
-        "warranty_period": 12,
-        "os": "Linux",
-        "os_version": "5.4.0-74-generic",
-        "machine": "x86_64",
-        "processor": "Intel(R) Core(TM) i7-8650U CPU @ 1.90GHz",
-        "hostname": "car-hostname",
-        "ip_address": "192.168.1.10",
-        "mac_address": "00:1A:2B:3C:4D:5E"
-    },
-    "dynamic_info": {
-        "position": [52.3765, 4.8945],
-        "speed": 8.5,
-        "power": 85,
-        "route": 2,
-        "permissions": ["admin", "viewer"],
-        "frequence": 10
-    },
-    "fingerprint": "a9b7ba70783b617e9998dc4dd82eb3c5",
-    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIE... (省略) ...QAB\n-----END PRIVATE KEY-----",
-    "public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIj... (省略) ...wIDAQAB\n-----END PUBLIC KEY-----"
-}
+**中文。** `Dataset.py` 用于生成三类设备的可控行为轨迹：
 
-```
+- **无人车**：地面运动，`Z = 0`。
+- **智能叉车**：地面物流运动，`Z = 0`。
+- **无人机**：空中运动，包含非零 `Z` 轴变化。
 
-## 3.3 [train_test_model.py](train_test_model.py)
+每个样本包含位置、电量、行为状态和设备相关信息。默认模型输入为四维：`X`、`Y`、`Z`、`Power`。
 
-利用无人车数据对初始化的LSTM进行训练和预测
+## Model Design
 
+**English.** The LSTM model learns temporal dependencies from device behavior sequences. Given a sequence of historical observations at times `t1, t2, ..., tn-1`, the model predicts the device state at `tn` and supports downstream authentication through prediction error and classification output.
 
-## 3.4 [devicefinger_test.py](./devicefinger_test.py)
+**中文。** LSTM 模型用于学习设备行为序列中的时间依赖关系。给定 `t1, t2, ..., tn-1` 时刻的历史观测，模型预测 `tn` 时刻的设备状态，并通过预测误差和分类输出支持后续身份认证。
 
-和设备指纹进行对比
+Relevant files:
 
-## 3.5 [cloud_edge_client.py](cloud_edge_client.py)
+- `Model.py`
+- `train_test_model.py`
+- `package/pred_classs.py`
 
-该项目基于LSTM模型实现了云端、边端和小车设备的协同工作流程。通过不同的进程分别模拟云端、边端和小车的行为，演示了如何在分布式环境中进行模型训练、微调、测试及设备验证。
+## Device Fingerprint and Identity Layer
 
-该系统包含三个主要的进程：
+**English.** `device.py` constructs device identities from static attributes, dynamic attributes, device fingerprints, and RSA key pairs.
 
-1. **云端进程**：负责模型的初始化、训练以及微调，并与边端设备进行数据交换。
-2. **边端进程**：接收云端的模型数据，使用接收到的小车数据进行模型测试，并将结果传回云端。
-3. **小车进程**：生成测试数据并将其发送给边端设备进行模型测试。
+Static attributes include device ID, name, manufacturer, device type, OS information, hostname, IP address, and MAC address. Dynamic attributes include position, speed, power, route ID, permissions, and update frequency.
 
-系统通过Socket通信实现各进程之间的数据传输，模拟了云端和边端之间的协同工作流程。
+**中文。** `device.py` 基于静态属性、动态属性、设备指纹和 RSA 公私钥构造设备身份。
 
-**云端-边端-小车 三进程通信流程图**
+静态属性包括设备 ID、名称、制造商、设备类型、操作系统信息、主机名、IP 地址和 MAC 地址。动态属性包括位置、速度、电量、路线编号、权限和数据更新频率。
+
+## Transfer Learning
+
+**English.** The transfer-learning workflow studies whether behavior knowledge learned from one device class can generalize to another. A typical experiment first trains an LSTM model on car data, evaluates it on forklift or UAV behavior, and then fine-tunes the model with a small amount of target-device data.
+
+**中文。** 迁移学习流程用于研究一种设备类型上学到的行为知识能否迁移到另一种设备类型。典型实验流程是先在无人车数据上训练 LSTM，然后直接测试叉车或无人机行为，再使用少量目标设备数据进行微调。
+
+Main steps:
+
+1. Generate training, testing, and fine-tuning datasets for forklifts and UAVs.
+2. Train target-device models from scratch.
+3. Test car-trained models directly on forklifts and UAVs.
+4. Fine-tune car-trained models for target-device authentication.
+
+## Cloud-Edge-Device Workflow
+
+**English.** `cloud_edge_client.py` simulates a collaborative workflow among cloud, edge, and device processes using socket communication.
+
+- **Cloud process**: initializes, trains, fine-tunes, and distributes the LSTM model.
+- **Edge process**: receives the model, evaluates device data, and sends feedback to the cloud.
+- **Device process**: generates test behavior data and transmits it to the edge side.
+
+**中文。** `cloud_edge_client.py` 使用 socket 通信模拟云端、边端和设备端的协同验证流程。
+
+- **云端进程**：负责模型初始化、训练、微调和模型下发。
+- **边端进程**：接收模型，测试设备数据，并将反馈发送回云端。
+- **设备进程**：生成测试行为数据，并发送给边端进行验证。
 
 ```mermaid
 graph TD
-    subgraph 云端进程
-    A1[初始化LSTM模型] --> A2[训练数据]
-    A2 --> A3[训练模型]
-    A3 --> A4[等待边端连接]
-    A4 --> A5[发送模型到边端]
-    A5 --> A6[接收边端的测试数据]
-    A6 --> A7[微调模型并保存]
-    A7 --> A8[继续测试]
+    subgraph Cloud[Cloud Process]
+    A1[Initialize LSTM Model] --> A2[Train Data]
+    A2 --> A3[Train Model]
+    A3 --> A4[Wait for Edge Connection]
+    A4 --> A5[Send Model to Edge]
+    A5 --> A6[Receive Edge Feedback]
+    A6 --> A7[Fine-tune and Save Model]
     end
 
-    subgraph 边端进程
-    B1[连接云端] --> B2[接收LSTM模型]
-    B2 --> B3[等待小车发送测试数据]
-    B3[等待小车发送测试数据] --> B4[接收测试数据]
-    B4 --> B5[使用模型进行测试]
-    B5 --> B6[将测试数据发送回云端]
+    subgraph Edge[Edge Process]
+    B1[Connect to Cloud] --> B2[Receive LSTM Model]
+    B2 --> B3[Wait for Device Data]
+    B3 --> B4[Evaluate Device Data]
+    B4 --> B5[Return Feedback to Cloud]
     end
 
-    subgraph 小车进程
-    C1[生成测试数据] --> C2[等待连接边端]
-    C2 --> C3[发送测试数据到边端]
+    subgraph Device[Device Process]
+    C1[Generate Test Data] --> C2[Connect to Edge]
+    C2 --> C3[Send Data to Edge]
     end
 
-    B1 -->|连接成功| A4
-    A5 -->|开始发送| B2
-    C2 -->|连接成功| B3
-    B6 -->|发送测试结果| A6
-    C3 -->|发送测试数据| B4
+    B1 --> A4
+    A5 --> B2
+    C2 --> B3
+    C3 --> B4
+    B5 --> A6
 ```
 
-## 3.6 [transfer_learning.py](transfer_learning.py)
+## Typical Usage
 
-本项目通过LSTM模型进行不同类型设备（如叉车和无人机）的智能控制模型训练、微调和测试。系统采用迁移学习的方式，首先训练小车模型，然后将其用于叉车和无人机，并通过微调进行性能优化。
+**English.** The repository contains multiple experiment scripts. Select the entry according to the experiment you want to run.
 
-项目包含以下主要步骤：
+**中文。** 仓库包含多个实验脚本，可根据实验目标选择入口。
 
-1. 生成叉车和无人机的数据集：训练集、测试集、微调数据集
-2. 重新训练叉车和无人机的模型进行测试
-3. 直接使用小车模型测试叉车和无人机
-4. 微调小车模型用于叉车和无人机进行测试
+```bash
+# Train and test the LSTM model
+python train_test_model.py
 
-## 3.7 [package](package/pred_classs.py)
+# Run transfer-learning experiments
+python transfer_learning.py
 
-时间:2024.11.6
+# Run cloud-edge-device collaborative workflow
+python cloud_edge_client.py
 
-当来一个输入是0时，表明是身份真实的设备，然后给它生成真实设备的属性，并通过封装的模型，输出验证结果0或1；当来一个输入是1时，表明是身份不真实的设备，然后给它生成不真实设备的属性，并通过封装的模型，输出验证结果0或1。
+# Visualize transfer-learning results
+python plot_transferlearning.py
+```
+
+## Notes on Reproducibility
+
+**English.** This project is a research prototype. For rigorous comparison, keep the generated dataset, random seed, model checkpoint, and evaluation script fixed across runs. Generated datasets and trained models should be versioned or archived when reporting results.
+
+**中文。** 本项目是研究原型。进行严谨对比时，应固定生成数据、随机种子、模型 checkpoint 和评估脚本。报告实验结果时，建议归档对应的数据集与模型文件。
+
+## Suggested Applications
+
+**English.**
+
+- Behavior-aware device authentication.
+- Industrial IoT identity verification.
+- Autonomous vehicle anomaly detection.
+- Cloud-edge collaborative model validation.
+- Transfer learning for heterogeneous cyber-physical devices.
+
+**中文。**
+
+- 行为感知设备身份认证。
+- 工业物联网身份验证。
+- 自动化设备异常检测。
+- 云边协同模型验证。
+- 异构 cyber-physical 设备迁移学习。
