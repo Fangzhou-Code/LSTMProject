@@ -163,35 +163,9 @@ Main steps:
 - **边端进程**：接收模型，测试设备数据，并将反馈发送回云端。
 - **设备进程**：生成测试行为数据，并发送给边端进行验证。
 
-```mermaid
-graph TD
-    subgraph Cloud[Cloud Process]
-    A1[Initialize LSTM Model] --> A2[Train Data]
-    A2 --> A3[Train Model]
-    A3 --> A4[Wait for Edge Connection]
-    A4 --> A5[Send Model to Edge]
-    A5 --> A6[Receive Edge Feedback]
-    A6 --> A7[Fine-tune and Save Model]
-    end
-
-    subgraph Edge[Edge Process]
-    B1[Connect to Cloud] --> B2[Receive LSTM Model]
-    B2 --> B3[Wait for Device Data]
-    B3 --> B4[Evaluate Device Data]
-    B4 --> B5[Return Feedback to Cloud]
-    end
-
-    subgraph Device[Device Process]
-    C1[Generate Test Data] --> C2[Connect to Edge]
-    C2 --> C3[Send Data to Edge]
-    end
-
-    B1 --> A4
-    A5 --> B2
-    C2 --> B3
-    C3 --> B4
-    B5 --> A6
-```
+<p align="center">
+  <img src="results/cloud_edge_lstm_workflow.svg" alt="Cloud-edge-device LSTM authentication workflow" width="100%">
+</p>
 
 ## Typical Usage
 
